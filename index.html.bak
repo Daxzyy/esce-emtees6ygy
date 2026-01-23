@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CDN Upload Ikram – layanan penyimpanan cepat dan aman untuk file dan media Anda.">
+    <meta name="keywords" content="CDN, Upload, Ikram, File Hosting, Cloud Storage, Media Upload">
+    <meta name="author" content="Ikram CDN">
+    <link rel="icon" href="https://i.ibb.co.com/hRjQ2P39/uc5wp9.jpg" type="image/png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="CDN Upload Ikram">
+    <meta property="og:title" content="CDN Upload Ikram">
+    <meta property="og:description" content="Layanan upload cepat dan stabil untuk semua kebutuhan media kamu🥰🥰😍😍">
+    <meta property="og:image" content="https://files.catbox.moe/vy1nk4.png">
+    <meta property="og:url" content="https://ikram.my.id">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="CDN Upload Ikram">
+    <meta name="twitter:description" content="Upload file cepat, ringan, dan aman – powered by Ikram.">
+    <meta name="twitter:image" content="https://files.catbox.moe/vy1nk4.png">
+    <meta name="theme-color" content="#2A2A2A">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://files.catbox.moe/vy1nk4.png">
+    <title>CDN Ikram</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-neutral-900 text-neutral-200 min-h-screen">
+    <div class="min-h-screen flex items-center justify-center px-4">
+        <div class="w-full max-w-md">
+            
+            <div class="text-center mb-6">
+                <img src="https://i.pinimg.com/originals/65/05/77/650577673fad701100d239c52fb6f044.gif" 
+                     alt="Upload" 
+                     class="w-20 h-20 mx-auto mb-4 opacity-90">
+                <h1 class="text-2xl font-semibold text-white mb-1">Upload File</h1>
+                <p class="text-sm text-neutral-400">Upload file luwh kesini 😎</p>
+            </div>
+
+            <div id="diskStatusContainer" class="bg-neutral-800 border border-neutral-700 rounded-lg p-4 mb-6">
+                <p class="text-sm text-neutral-400 mb-2">Disk Storage</p>
+                
+                <div class="relative h-6 bg-neutral-700 rounded-lg overflow-hidden">
+                    <div id="diskProgressBar" class="h-full bg-pink-500 transition-all" style="width: 0%;"></div>
+                    
+                    <div class="absolute inset-0 flex items-center justify-between px-3">
+                        <span id="diskUsedText" class="text-xs font-semibold text-white/90 drop-shadow-sm">Memuat...</span> 
+                        <span id="diskTotalText" class="text-xs font-semibold text-white/90 drop-shadow-sm"></span> 
+                    </div>
+                </div>
+
+                <p id="diskStatusMessage" class="text-xs text-neutral-500 mt-2">Memuat status...</p>
+            </div>
+            <form id="uploadForm" class="space-y-4">
+                
+                <div>
+                    <label class="block text-sm text-neutral-300 mb-2">Pilih File</label>
+                    <input 
+                        type="file" 
+                        id="fileInput" 
+                        name="file"
+                        class="block w-full text-sm text-neutral-300 bg-neutral-800 rounded-lg border border-neutral-700
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-md file:border-0
+                            file:text-sm file:font-medium
+                            file:bg-pink-500 file:text-white
+                            hover:file:bg-pink-600 hover:border-neutral-600
+                            cursor-pointer transition"
+                        required>
+                </div>
+
+                <button 
+                    type="submit"
+                    class="w-full bg-pink-500 hover:bg-pink-600 text-white font-medium py-2.5 rounded-lg
+                        transition focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 focus:ring-offset-neutral-900">
+                    Upload
+                </button>
+            </form>
+
+            <div id="loadingContainer" class="hidden mt-4">
+                <div class="flex items-center gap-2">
+                    <div class="h-1 flex-1 bg-neutral-800 rounded-full overflow-hidden">
+                        <div id="loadingBar" class="h-full bg-pink-500 w-0 transition-all"></div>
+                    </div>
+                    <span id="loadingPercent" class="text-xs text-neutral-400 w-10">0%</span>
+                </div>
+            </div>
+
+            <div id="response" class="mt-4"></div>
+
+        </div>
+    </div>
+
+    <script>
+        
+        // --- FUNGSI UTAMA UNTUK STATUS DISK (MODIFIKASI: Pesan Penuh/Hampir Penuh) ---
+        async function updateDiskStatus() {
+            const bar = document.getElementById('diskProgressBar');
+            const usedText = document.getElementById('diskUsedText'); 
+            const totalText = document.getElementById('diskTotalText'); 
+            const message = document.getElementById('diskStatusMessage');
+
+            try {
+                const response = await fetch('/status-disk/');
+                const data = await response.json();
+
+                if (data.success) {
+                    const percentage = Math.round(data.usedPercentage);
+                    
+                    const formattedUsed = data.used;
+                    const formattedTotal = data.total;
+                    
+                    bar.style.width = `${percentage}%`;
+                    
+                    usedText.textContent = formattedUsed;
+                    totalText.textContent = formattedTotal;
+                    
+                    // Permintaan: Ganti pesan saat penuh dan hampir penuh
+                    if (percentage >= 100) {
+                        bar.classList.add('bg-red-600');
+                        bar.classList.remove('bg-pink-500');
+                        message.textContent = `Udh full jir lu mw ngapain?😹🤫`;
+                        message.classList.remove('text-neutral-500');
+                        message.classList.add('text-red-400');
+                    } else if (percentage > 90) {
+                        bar.classList.add('bg-red-600');
+                        bar.classList.remove('bg-pink-500');
+                        message.textContent = `HAMPIR PENUH (${percentage}% dari ${formattedTotal}).`; 
+                        message.classList.remove('text-neutral-500');
+                        message.classList.add('text-red-400');
+                    } else {
+                        bar.classList.remove('bg-red-600');
+                        bar.classList.add('bg-pink-500');
+                        message.textContent = `Disk CDN terpakai: ${formattedUsed}. Kapasitas Total: ${formattedTotal}.`;
+                        message.classList.remove('text-red-400');
+                        message.classList.add('text-neutral-500');
+                    }
+                } else {
+                    usedText.textContent = 'Gagal memuat';
+                    totalText.textContent = 'Gagal memuat';
+                    message.textContent = 'Error: ' + data.message;
+                }
+
+            } catch (error) {
+                usedText.textContent = 'Offline';
+                totalText.textContent = 'N/A';
+                message.textContent = 'Koneksi ke API status disk gagal.';
+            }
+        }
+
+        updateDiskStatus();
+        setInterval(updateDiskStatus, 10000); 
+
+        // --- AKHIR FUNGSI STATUS DISK ---
+
+        function copyUrl(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                const statusElement = document.getElementById('copyStatus');
+                statusElement.classList.remove('hidden');
+                setTimeout(() => {
+                    statusElement.classList.add('hidden');
+                }, 1500);
+            }).catch(err => {
+                console.error('Gagal menyalin:', err);
+            });
+        }
+        
+        function showSuccess(element, data) {
+            const messageParts = data.message.split('. ');
+            const expiryMessageText = messageParts.length > 1 ? messageParts[1] : messageParts[0];
+
+            const expiryMessageHtml = data.message.includes('Permanen') 
+                ? '<p class="text-green-400 font-medium text-xs">Akses file: Permanen</p>'
+                : `<p class="text-yellow-400 font-medium text-xs">${expiryMessageText}</p>`;
+
+            element.innerHTML = `
+                <div class="bg-neutral-800 border border-neutral-700 rounded-lg p-4">
+                    <p class="text-green-400 text-sm font-medium mb-3">✓ Upload berhasil</p>
+                    
+                    ${expiryMessageHtml}
+                    
+                    <div class="space-y-2 text-sm mt-3">
+                        <div>
+                            <p class="text-neutral-400 text-xs mb-1">Filename</p>
+                            <p class="text-neutral-200 font-mono">${data.filename}</p>
+                        </div>
+                        <div>
+                            <p class="text-neutral-400 text-xs mb-1">URL</p>
+                            <div class="flex items-center space-x-2">
+                                <a id="urlText" href="${data.url}" target="_blank" 
+                                    class="text-pink-400 hover:text-pink-300 font-mono break-all flex-1">
+                                    ${data.url}
+                                </a>
+                                <button onclick="copyUrl('${data.url}')"
+                                        class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 text-xs px-2 py-1 rounded transition focus:outline-none"
+                                        title="Copy URL">
+                                    Copy
+                                </button>
+                            </div>
+                            <p id="copyStatus" class="text-xs text-green-400 mt-1 hidden">URL disalin!</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showError(element, message) {
+            element.innerHTML = `
+                <div class="bg-neutral-800 border border-red-900/50 rounded-lg p-4">
+                    <p class="text-red-400 text-sm">✕ ${message}</p>
+                </div>
+            `;
+        }
+
+
+        // =========== LOGIKA UPLOAD (MODIFIKASI: Perbaiki Stuck Loading) ===========
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const responseDiv = document.getElementById('response');
+            const loadingContainer = document.getElementById('loadingContainer');
+            const loadingBar = document.getElementById('loadingBar');
+            const loadingPercent = document.getElementById('loadingPercent');
+            const fileInput = document.getElementById('fileInput');
+            const button = this.querySelector('button');
+            
+            // Perhatikan: Batas di Client harus sesuai dengan Server (30MB)
+            const MAX_SIZE_BYTES = 30 * 1024 * 1024; 
+            
+            if (fileInput.files.length === 0) {
+                showError(responseDiv, 'Pilih file terlebih dahulu');
+                return;
+            }
+
+            const fileSize = fileInput.files[0].size;
+            if (fileSize > MAX_SIZE_BYTES) {
+                showError(responseDiv, 'Ukuran file melebihi batas maksimum 30 MB.');
+                return; 
+            }
+            
+            // 1. Persiapan UI dan FormData
+            button.disabled = true;
+            button.textContent = 'Uploading...';
+            responseDiv.innerHTML = '';
+            loadingContainer.classList.remove('hidden');
+            loadingBar.style.width = '0%';
+            loadingPercent.textContent = '0%';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('expiry', '30'); 
+
+            // 2. Inisiasi XHR
+            const xhr = new XMLHttpRequest();
+            
+            // 3. Handler PROGRESS
+            xhr.upload.onprogress = function(event) {
+                if (event.lengthComputable) {
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    loadingBar.style.width = percentComplete + '%';
+                    loadingPercent.textContent = Math.round(percentComplete) + '%';
+                }
+            };
+            
+            // 4. Handler SUKSES/GAGAL
+            xhr.onload = function() {
+                const data = JSON.parse(xhr.responseText);
+
+                // Perbaiki Stuck Loading: Cek status dulu sebelum set 100%
+                if (xhr.status === 200 && data.success) {
+                    loadingBar.style.width = '100%'; 
+                    loadingPercent.textContent = '100%';
+                    
+                    setTimeout(() => {
+                        loadingContainer.classList.add('hidden');
+                        fileInput.value = '';
+                        showSuccess(responseDiv, data);
+                        updateDiskStatus(); 
+                    }, 500);
+                } else {
+                    // KASUS GAGAL (TERMASUK STATUS 403/KUOTA PENUH): SEMBUNYIKAN LOADING SEGERA
+                    loadingContainer.classList.add('hidden');
+                    loadingBar.style.width = '0%'; // Reset bar visual
+                    loadingPercent.textContent = '0%'; // Reset percentage
+                    
+                    showError(responseDiv, data.message || `Upload gagal dengan status ${xhr.status}`);
+                    updateDiskStatus(); // Perbarui status disk untuk menunjukkan kuota yang penuh
+                }
+            };
+
+        
+            xhr.onerror = function() {
+                loadingContainer.classList.add('hidden');
+                showError(responseDiv, 'Koneksi gagal atau terjadi kesalahan jaringan.');
+            };
+
+            
+            xhr.onloadend = function() {
+                button.disabled = false;
+                button.textContent = 'Upload';
+            };
+            
+            // 7. Kirim Request
+            xhr.open('POST', '/upload/', true);
+            xhr.send(formData); 
+        });
+        // =================================================================================
+    </script>
+</body>
+</html>
