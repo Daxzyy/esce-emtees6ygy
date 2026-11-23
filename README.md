@@ -11,7 +11,7 @@ src/                          ← source lengkap (hasil decode apktool, sudah di
   resources.arsc, res/        ← resource asli, tidak diubah
   smali*/                     ← kode; ini yang boleh kamu edit
   apktool.yml
-patch.py                      ← daftar patch anti-cheat (15 blok)
+patch.py                      ← daftar patch anti-cheat (14 blok)
 .github/workflows/release.yml ← CI: build → sign → tempel ke Releases
 base/Ujian-MTsN6v3.apk        ← APK asli, cuma buat kalau mau decode versi baru
 ```
@@ -31,10 +31,14 @@ Karena source-nya sudah ada di repo, **tidak perlu decompile ulang** — edit
 | 6 | `FLAG_SECURE` (screenshot/rekam layar dilarang) | Diizinkan |
 | 7 | Tombol Back dikunci 60 menit | Tombol Back biasa (keluar) |
 | 8 | Timer ujian 60 menit | Tidak berlaku |
-| 9 | Status bar & navigation bar disembunyikan | Tampil |
-| 10 | Kode admin `97683106` + lockout 5 kali salah | Selalu benar, tanpa lockout |
-| 11 | Gerbang overlay yang menutupi soal (v3) | Tidak dibangun |
-| 12 | Watchdog lock-task 700 ms (v3) | Mati |
+| 9 | Kode admin `97683106` + lockout 5 kali salah | Selalu benar, tanpa lockout |
+| 10 | Gerbang overlay yang menutupi soal (v3) | Tidak dibangun |
+| 11 | Watchdog lock-task 700 ms (v3) | Mati |
+
+Bar status atas dan tombol navigasi bawah **tetap disembunyikan** seperti APK asli.
+Untuk melihatnya, usap dari tepi layar ke dalam — bar muncul sebentar lalu
+hilang sendiri (`BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`), dan disembunyikan lagi
+tiap window dapat fokus.
 
 Tidak ada kode di aplikasi ini yang mengirim laporan ke server — deteksi
 "keluar aplikasi" cuma tampil di HP murid itu sendiri.
@@ -79,7 +83,7 @@ Jalankan manual kapan saja lewat tab **Actions → Build & Release → Run workf
 
 ```bash
 java -jar apktool.jar d -f -r APK-BARU.apk -o src
-PATCH_ROOT="$PWD/src" python3 patch.py   # terapkan 15 patch ke source baru
+PATCH_ROOT="$PWD/src" python3 patch.py   # terapkan 14 patch ke source baru
 git add -A && git commit -m "port to versionCode N"
 git tag vN.0.0 && git push origin vN.0.0
 ```

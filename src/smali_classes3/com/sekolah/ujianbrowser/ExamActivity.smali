@@ -1005,11 +1005,15 @@
 
     invoke-direct {v0, v1, v2}, Landroidx/core/view/WindowInsetsControllerCompat;-><init>(Landroid/view/Window;Landroid/view/View;)V
 
+    const/4 v1, 0x2
+
+    invoke-virtual {v0, v1}, Landroidx/core/view/WindowInsetsControllerCompat;->setSystemBarsBehavior(I)V
+
     invoke-static {}, Landroidx/core/view/WindowInsetsCompat$Type;->systemBars()I
 
     move-result v1
 
-    invoke-virtual {v0, v1}, Landroidx/core/view/WindowInsetsControllerCompat;->show(I)V
+    invoke-virtual {v0, v1}, Landroidx/core/view/WindowInsetsControllerCompat;->hide(I)V
 
     return-void
 .end method

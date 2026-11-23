@@ -72,34 +72,6 @@ replace_method(
     EXAM, ".method private final enterLockMode()V", noop(),
     "enterLockMode() -> no-op (no startLockTask / setLockTaskPackages / setLockTaskFeatures)")
 
-replace_method(EXAM, ".method private final hideSystemBars()V", [
-    "    .locals 3",
-    "",
-    "    new-instance v0, Landroidx/core/view/WindowInsetsControllerCompat;",
-    "",
-    "    invoke-virtual {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->getWindow()Landroid/view/Window;",
-    "",
-    "    move-result-object v1",
-    "",
-    "    invoke-virtual {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->getWindow()Landroid/view/Window;",
-    "",
-    "    move-result-object v2",
-    "",
-    "    invoke-virtual {v2}, Landroid/view/Window;->getDecorView()Landroid/view/View;",
-    "",
-    "    move-result-object v2",
-    "",
-    "    invoke-direct {v0, v1, v2}, Landroidx/core/view/WindowInsetsControllerCompat;-><init>(Landroid/view/Window;Landroid/view/View;)V",
-    "",
-    "    invoke-static {}, Landroidx/core/view/WindowInsetsCompat$Type;->systemBars()I",
-    "",
-    "    move-result v1",
-    "",
-    "    invoke-virtual {v0, v1}, Landroidx/core/view/WindowInsetsControllerCompat;->show(I)V",
-    "",
-    "    return-void",
-], "hideSystemBars() -> show system bars instead of hiding them")
-
 replace_method(
     EXAM, ".method private final triggerIfLeaving()V", noop(),
     "triggerIfLeaving() -> no-op (no leave-app detection)")
