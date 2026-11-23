@@ -1,0 +1,16 @@
+# build output
+/unsigned.apk
+/aligned.apk
+/app-dev.apk
+/src/build/
+
+# never commit signing material
+*.jks
+*.keystore
+*.p12
+keystore*
+key.properties
+
+# junk
+*.log
+.DS_Store

@@ -10,7 +10,6 @@ permissions:
 
 env:
   APKTOOL_VERSION: "2.11.1"
-  BUILD_TOOLS_VERSION: "34.0.0"
   BUILD_TOOLS_ZIP: "build-tools_r34-linux.zip"
 
 jobs:
@@ -30,7 +29,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: tools
-          key: tools-apktool${{ env.APKTOOL_VERSION }}-bt${{ env.BUILD_TOOLS_VERSION }}
+          key: tools-apktool${{ env.APKTOOL_VERSION }}-bt34
 
       - name: Fetch apktool
         run: |
@@ -47,15 +46,12 @@ jobs:
             mv tools/android-14 tools/build-tools
             rm -f tools/bt.zip
           fi
-          tools/build-tools/zipalign -h >/dev/null 2>&1 || true
 
-      - name: Decode + patch
-        run: |
-          java -jar tools/apktool.jar d -f -r base/Ujian-MTsN6v3.apk -o work
-          PATCH_ROOT="$PWD/work" python3 patch.py
+      - name: Verify patches are active
+        run: PATCH_ROOT="$PWD/src" python3 patch.py
 
       - name: Build APK
-        run: java -jar tools/apktool.jar b work -o unsigned.apk
+        run: java -jar tools/apktool.jar b src -o unsigned.apk
 
       - name: Align + sign
         env:

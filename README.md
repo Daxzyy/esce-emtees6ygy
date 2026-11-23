@@ -1,9 +1,23 @@
 # sc-6kbm
 
-Build **development** dari aplikasi ujian `com.sekolah.ujianbrowser` (Ujian MTsN 6 Kebumen).
+**Full source** aplikasi ujian `com.sekolah.ujianbrowser` (Ujian MTsN 6 Kebumen,
+versionCode 3) + pipeline build otomatis.
 
-Build ini melewati penguncian kiosk / anti-cheat yang ada di APK asli.
-Semua fitur lain (WebView, QR scanner, soal, pengiriman jawaban) **tidak disentuh**.
+Isi repo ini:
+
+```
+src/                          ← source lengkap (hasil decode apktool, sudah di-patch)
+  AndroidManifest.xml         ← binary asli, tidak diubah
+  resources.arsc, res/        ← resource asli, tidak diubah
+  smali*/                     ← kode; ini yang boleh kamu edit
+  apktool.yml
+patch.py                      ← daftar patch anti-cheat (15 blok)
+.github/workflows/release.yml ← CI: build → sign → tempel ke Releases
+base/Ujian-MTsN6v3.apk        ← APK asli, cuma buat kalau mau decode versi baru
+```
+
+Karena source-nya sudah ada di repo, **tidak perlu decompile ulang** — edit
+`src/smali_*/...` langsung, push, CI yang build.
 
 ## Yang dimatikan
 
@@ -22,46 +36,53 @@ Semua fitur lain (WebView, QR scanner, soal, pengiriman jawaban) **tidak disentu
 | 11 | Gerbang overlay yang menutupi soal (v3) | Tidak dibangun |
 | 12 | Watchdog lock-task 700 ms (v3) | Mati |
 
-Tidak ada kode di aplikasi ini yang mengirim laporan ke server — deteksi "keluar
-aplikasi" cuma tampil di HP murid itu sendiri.
+Tidak ada kode di aplikasi ini yang mengirim laporan ke server — deteksi
+"keluar aplikasi" cuma tampil di HP murid itu sendiri.
 
 ## Cara install
 
 Ambil APK dari halaman **[Releases](../../releases)**, unduh, lalu buka file-nya.
 
-> Build dev ini **tidak bisa ditimpa** oleh APK asli (signature beda).
+> Build dev ini **tidak bisa ditimpa** APK asli (signature beda).
 > Untuk balik ke APK asli, uninstall dulu build dev-nya.
 
 ## Cara build sendiri
 
-Repo ini sudah berisi APK dasar + patch, jadi **tidak perlu decompile manual**.
-
 ```bash
-java -jar apktool.jar d -f -r base/Ujian-MTsN6v3.apk -o work
-PATCH_ROOT="$PWD/work" python3 patch.py
-java -jar apktool.jar b work -o unsigned.apk
+java -jar apktool.jar b src -o unsigned.apk
 ```
 
-`patch.py` adalah satu-satunya tempat perubahan. Tiap blok `replace_method`
-mencetak `OK <nama patch>`; kalau ada yang berubah bentuk di versi APK baru,
-skripnya berhenti dengan pesan jelas (bukan diam-diam gagal).
+Kalau mau pastikan patch-nya masih aktif:
 
-### Nambah patch baru
+```bash
+PATCH_ROOT="$PWD/src" python3 patch.py
+```
 
-1. Decode sekali: `java -jar apktool.jar d -f -r base/APK.apk -o work`
-2. Cari smali yang mau diubah di `work/smali_*/...`
-3. Tambahkan blok `replace_method(...)` / `replace_once(...)` di `patch.py`
-4. Push. CI yang build.
+Skripnya idempoten: blok yang sudah terpasang akan cetak
+`SKIP already applied: ...`, blok yang bentuknya berubah di APK baru akan
+berhenti dengan pesan jelas (bukan diam-diam gagal).
 
-## Rilis
+## Cara rilis
 
 ```bash
 git tag v4.0.0
 git push origin v4.0.0
 ```
 
-Workflow `Build & Release` jalan otomatis: decode → patch → build → sign →
-tempel ke GitHub Release. Tinggal unduh dari halaman Releases.
+Workflow **Build & Release** jalan otomatis: cek patch → build → zipalign →
+sign → tempel ke GitHub Release. Tinggal unduh dari halaman Releases.
+
+Jalankan manual kapan saja lewat tab **Actions → Build & Release → Run workflow**
+(bikin artifact, tanpa rilis).
+
+## Porting ke versi APK baru
+
+```bash
+java -jar apktool.jar d -f -r APK-BARU.apk -o src
+PATCH_ROOT="$PWD/src" python3 patch.py   # terapkan 15 patch ke source baru
+git add -A && git commit -m "port to versionCode N"
+git tag vN.0.0 && git push origin vN.0.0
+```
 
 ## Secrets yang dibutuhkan CI
 

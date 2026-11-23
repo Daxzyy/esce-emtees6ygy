@@ -23,6 +23,9 @@ def write(path, data):
 def replace_once(path, old, new, tag):
     src = read(path)
     n = src.count(old)
+    if n == 0 and new in src:
+        LOG.append("SKIP already applied: %s" % tag)
+        return
     if n != 1:
         raise SystemExit("EXPECTED 1 OCCURRENCE, GOT %d: %s" % (n, tag))
     write(path, src.replace(old, new, 1))
@@ -46,6 +49,11 @@ def replace_method(path, signature, new_body_lines, tag):
             break
     if end is None:
         raise SystemExit("END METHOD NOT FOUND: %s" % signature)
+
+    current = lines[start + 1:end]
+    if current == new_body_lines:
+        LOG.append("SKIP already applied: %s" % tag)
+        return
 
     new_lines = lines[:start + 1] + new_body_lines + lines[end:]
     write(path, "\n".join(new_lines))
