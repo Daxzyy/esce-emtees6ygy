@@ -1,0 +1,93 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  APKTOOL_VERSION: "2.11.1"
+  BUILD_TOOLS_VERSION: "34.0.0"
+  BUILD_TOOLS_ZIP: "build-tools_r34-linux.zip"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Cache apktool + build-tools
+        uses: actions/cache@v4
+        with:
+          path: tools
+          key: tools-apktool${{ env.APKTOOL_VERSION }}-bt${{ env.BUILD_TOOLS_VERSION }}
+
+      - name: Fetch apktool
+        run: |
+          mkdir -p tools
+          test -f tools/apktool.jar || curl -fsSL -o tools/apktool.jar \
+            "https://github.com/iBotPeaches/Apktool/releases/download/v${APKTOOL_VERSION}/apktool_${APKTOOL_VERSION}.jar"
+
+      - name: Fetch Android build-tools
+        run: |
+          mkdir -p tools
+          if [ ! -d tools/build-tools ]; then
+            curl -fsSL -o tools/bt.zip "https://dl.google.com/android/repository/${BUILD_TOOLS_ZIP}"
+            unzip -q tools/bt.zip -d tools
+            mv tools/android-14 tools/build-tools
+            rm -f tools/bt.zip
+          fi
+          tools/build-tools/zipalign -h >/dev/null 2>&1 || true
+
+      - name: Decode + patch
+        run: |
+          java -jar tools/apktool.jar d -f -r base/Ujian-MTsN6v3.apk -o work
+          PATCH_ROOT="$PWD/work" python3 patch.py
+
+      - name: Build APK
+        run: java -jar tools/apktool.jar b work -o unsigned.apk
+
+      - name: Align + sign
+        env:
+          KS_B64: ${{ secrets.APK_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.APK_KEYSTORE_PASS }}
+          KS_ALIAS: ${{ secrets.APK_KEYSTORE_ALIAS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KS_B64:-}" ]; then
+            echo "::error::APK_KEYSTORE_B64 secret is not set"
+            exit 1
+          fi
+          printf '%s' "$KS_B64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
+          tools/build-tools/zipalign -f -p 4 unsigned.apk aligned.apk
+          tools/build-tools/apksigner sign \
+            --ks "$RUNNER_TEMP/keystore.jks" \
+            --ks-pass "pass:${KS_PASS}" \
+            --key-pass "pass:${KS_PASS}" \
+            --ks-key-alias "${KS_ALIAS}" \
+            --out app-dev.apk aligned.apk
+          tools/build-tools/apksigner verify --verbose app-dev.apk
+          rm -f "$RUNNER_TEMP/keystore.jks"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-dev-${{ github.ref_name }}
+          path: app-dev.apk
+
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app-dev.apk
+          make_latest: true
