@@ -196,7 +196,7 @@
 
     check-cast v4, Ljava/lang/Runnable;
 
-    const-wide/16 v5, 0x2bc
+    const-wide/16 v5, 0xc8
 
     invoke-virtual {v3, v4, v5, v6}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
 

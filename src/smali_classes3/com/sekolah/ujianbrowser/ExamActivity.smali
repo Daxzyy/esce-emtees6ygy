@@ -3100,9 +3100,11 @@
 
     check-cast v2, Ljava/lang/Runnable;
 
-    const-wide/16 v3, 0x1f4
+    const-wide/16 v3, 0xc8
 
     invoke-virtual {v1, v2, v3, v4}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
+
+    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->enterLockMode()V
 
     return-void
 .end method

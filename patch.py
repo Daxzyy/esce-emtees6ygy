@@ -898,5 +898,39 @@ replace_once(
     "    const-wide v17, 0x40bf400000000000L    # 8000.0",
     "playSiren() -> amplitude 8000 (quieter siren)")
 
+# --------------------------------------------------------------------------
+# 5. Snappier mode switching
+#    - Mode Default: ask for screen pinning right away (enterLockMode) instead
+#      of waiting at the gate until the activity is resumed again
+#    - poll lock state every 200 ms (was 700 / 500) so the gate/WebView swap
+#      happens as soon as the pin is accepted; armCheck timeout stays 30 s
+# --------------------------------------------------------------------------
+replace_once(
+    EXAM,
+    "    const-wide/16 v3, 0x1f4\n"
+    "\n"
+    "    invoke-virtual {v1, v2, v3, v4}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z\n"
+    "\n"
+    "    return-void\n"
+    ".end method",
+    "    const-wide/16 v3, 0xc8\n"
+    "\n"
+    "    invoke-virtual {v1, v2, v3, v4}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z\n"
+    "\n"
+    "    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->enterLockMode()V\n"
+    "\n"
+    "    return-void\n"
+    ".end method",
+    "devModeApply() -> request screen pinning immediately + 200 ms armCheck")
+
+LOCKWATCH = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/ExamActivity$lockWatch$1.smali")
+ARMCHECK = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/ExamActivity$armCheck$1.smali")
+replace_once(LOCKWATCH, "    const-wide/16 v5, 0x2bc", "    const-wide/16 v5, 0xc8",
+             "lockWatch poll 700 ms -> 200 ms")
+replace_once(ARMCHECK, "    const-wide/16 v4, 0x1f4", "    const-wide/16 v4, 0xc8",
+             "armCheck poll 500 ms -> 200 ms")
+replace_once(ARMCHECK, "    add-int/lit16 v2, v2, 0x1f4", "    add-int/lit16 v2, v2, 0xc8",
+             "armCheck waitedMs step 500 -> 200 (30 s timeout unchanged)")
+
 print("\n".join(LOG))
 print("TOTAL PATCHES: %d" % len(LOG))

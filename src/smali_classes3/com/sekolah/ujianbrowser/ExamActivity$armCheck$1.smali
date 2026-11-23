@@ -90,7 +90,7 @@
 
     move-result v2
 
-    add-int/lit16 v2, v2, 0x1f4
+    add-int/lit16 v2, v2, 0xc8
 
     invoke-static {v1, v2}, Lcom/sekolah/ujianbrowser/ExamActivity;->access$setWaitedMs$p(Lcom/sekolah/ujianbrowser/ExamActivity;I)V
 
@@ -136,7 +136,7 @@
 
     check-cast v3, Ljava/lang/Runnable;
 
-    const-wide/16 v4, 0x1f4
+    const-wide/16 v4, 0xc8
 
     invoke-virtual {v2, v3, v4, v5}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
 
