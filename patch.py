@@ -932,5 +932,44 @@ replace_once(ARMCHECK, "    const-wide/16 v4, 0x1f4", "    const-wide/16 v4, 0xc
 replace_once(ARMCHECK, "    add-int/lit16 v2, v2, 0x1f4", "    add-int/lit16 v2, v2, 0xc8",
              "armCheck waitedMs step 500 -> 200 (30 s timeout unchanged)")
 
+# --------------------------------------------------------------------------
+# 6. Siren respects the media volume: if STREAM_MUSIC is 0 the siren stays
+#    silent (some ROMs still let the AudioTrack through)
+# --------------------------------------------------------------------------
+replace_once(
+    EXAM,
+    "    :dev_mode_orig\n"
+    "\n"
+    "    .line 516\n"
+    "    const/16 v1, 0x5622",
+    "    :dev_mode_orig\n"
+    "\n"
+    "    const-string v0, \"audio\"\n"
+    "\n"
+    "    move-object/from16 v1, p0\n"
+    "\n"
+    "    invoke-virtual {v1, v0}, Lcom/sekolah/ujianbrowser/ExamActivity;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;\n"
+    "\n"
+    "    move-result-object v0\n"
+    "\n"
+    "    check-cast v0, Landroid/media/AudioManager;\n"
+    "\n"
+    "    if-eqz v0, :dev_vol_ok\n"
+    "\n"
+    "    const/4 v1, 0x3\n"
+    "\n"
+    "    invoke-virtual {v0, v1}, Landroid/media/AudioManager;->getStreamVolume(I)I\n"
+    "\n"
+    "    move-result v0\n"
+    "\n"
+    "    if-nez v0, :dev_vol_ok\n"
+    "\n"
+    "    return-void\n"
+    "\n"
+    "    :dev_vol_ok\n"
+    "    .line 516\n"
+    "    const/16 v1, 0x5622",
+    "playSiren() -> silent when media volume is 0")
+
 print("\n".join(LOG))
 print("TOTAL PATCHES: %d" % len(LOG))

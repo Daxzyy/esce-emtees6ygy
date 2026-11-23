@@ -1502,6 +1502,29 @@
     return-void
     :dev_mode_orig
 
+    const-string v0, "audio"
+
+    move-object/from16 v1, p0
+
+    invoke-virtual {v1, v0}, Lcom/sekolah/ujianbrowser/ExamActivity;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Landroid/media/AudioManager;
+
+    if-eqz v0, :dev_vol_ok
+
+    const/4 v1, 0x3
+
+    invoke-virtual {v0, v1}, Landroid/media/AudioManager;->getStreamVolume(I)I
+
+    move-result v0
+
+    if-nez v0, :dev_vol_ok
+
+    return-void
+
+    :dev_vol_ok
     .line 516
     const/16 v1, 0x5622
 
