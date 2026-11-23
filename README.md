@@ -1,1 +1,1 @@
-# cdn-ikram
+# sc-6kbm
