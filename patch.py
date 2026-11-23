@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 """Development-build patcher for com.sekolah.ujianbrowser (exam-beta.apk).
 
-Disables kiosk / anti-cheat device restrictions while leaving WebView,
-QR scanner and all non-restriction features untouched.
+Every restriction is gated behind the runtime switch DevMode.modEnabled:
+
+    modEnabled == true   -> Mode Mod   (restrictions disabled, current behaviour)
+    modEnabled == false  -> Mode Default (original APK behaviour restored)
+
+The switch is flipped by an invisible double-tap anywhere on ExamActivity.
 """
 import os
 
 ROOT = os.environ.get("PATCH_ROOT", "/tmp/opencode/apkwork/decoded")
 LOG = []
+
+DEV = "Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z"
+DEV_CLS = "Lcom/sekolah/ujianbrowser/DevMode;"
 
 
 def read(path):
@@ -22,19 +29,17 @@ def write(path, data):
 
 def replace_once(path, old, new, tag):
     src = read(path)
-    n = src.count(old)
-    if n == 0 and new in src:
+    if new in src:
         LOG.append("SKIP already applied: %s" % tag)
         return
+    n = src.count(old)
     if n != 1:
         raise SystemExit("EXPECTED 1 OCCURRENCE, GOT %d: %s" % (n, tag))
     write(path, src.replace(old, new, 1))
     LOG.append("OK  %s" % tag)
 
 
-def replace_method(path, signature, new_body_lines, tag):
-    """Replace everything between `.method <signature>` and `.end method`."""
-    lines = read(path).split("\n")
+def _span(lines, signature):
     start = None
     for i, ln in enumerate(lines):
         if ln == signature:
@@ -42,111 +47,601 @@ def replace_method(path, signature, new_body_lines, tag):
             break
     if start is None:
         raise SystemExit("SIGNATURE NOT FOUND: %s" % signature)
-    end = None
     for j in range(start + 1, len(lines)):
         if lines[j] == ".end method":
-            end = j
-            break
-    if end is None:
-        raise SystemExit("END METHOD NOT FOUND: %s" % signature)
+            return start, j
+    raise SystemExit("END METHOD NOT FOUND: %s" % signature)
 
-    current = lines[start + 1:end]
-    if current == new_body_lines:
+
+def add_guard(path, signature, kind, tag):
+    """Prefix a method with `if (modEnabled) <original-behaviour>; else <orig>`.
+
+    kind: "void" -> mod skips the call entirely
+          "long" -> mod returns 0L
+          "bool" -> mod returns true
+    """
+    lines = read(path).split("\n")
+    start, end = _span(lines, signature)
+    body = lines[start + 1:end]
+    if any("DevMode;->modEnabled" in ln for ln in body):
         LOG.append("SKIP already applied: %s" % tag)
         return
 
-    new_lines = lines[:start + 1] + new_body_lines + lines[end:]
-    write(path, "\n".join(new_lines))
+    i = 0
+    while i < len(body) and not body[i].startswith("    .locals "):
+        i += 1
+    if i >= len(body):
+        raise SystemExit("NO .locals IN: %s" % signature)
+    j = i + 1
+    while j < len(body) and (body[j].strip() == "" or body[j].startswith("    .param ")):
+        j += 1
+
+    if kind == "void":
+        guard = ["", "    sget-boolean v0, %s" % DEV,
+                 "    if-eqz v0, :dev_mode_orig",
+                 "    return-void",
+                 "    :dev_mode_orig", ""]
+    elif kind == "long":
+        guard = ["", "    sget-boolean v0, %s" % DEV,
+                 "    if-eqz v0, :dev_mode_orig",
+                 "    const-wide/16 v0, 0x0",
+                 "    return-wide v0",
+                 "    :dev_mode_orig", ""]
+    elif kind == "bool":
+        guard = ["", "    sget-boolean v0, %s" % DEV,
+                 "    if-eqz v0, :dev_mode_orig",
+                 "    const/4 v0, 0x1",
+                 "    return v0",
+                 "    :dev_mode_orig", ""]
+    else:
+        raise SystemExit("UNKNOWN GUARD KIND: %s" % kind)
+
+    new_body = body[:j] + guard + body[j:]
+    write(path, "\n".join(lines[:start + 1] + new_body + lines[end:]))
     LOG.append("OK  %s" % tag)
 
 
-def noop(locals_n=0):
-    body = ["    .locals %d" % locals_n, "", "    return-void"]
-    return body
+def ensure_fields(path, fields, tag):
+    src = read(path)
+    if fields[0] in src:
+        LOG.append("SKIP already applied: %s" % tag)
+        return
+    anchor = "\n# direct methods\n"
+    if anchor not in src:
+        raise SystemExit("NO # direct methods ANCHOR IN: %s" % path)
+    write(path, src.replace(anchor, "\n" + "\n".join(fields) + "\n" + anchor, 1))
+    LOG.append("OK  %s" % tag)
 
 
-# --------------------------------------------------------------- ExamActivity
+def ensure_method(path, marker, text, tag):
+    src = read(path)
+    if marker in src:
+        LOG.append("SKIP already applied: %s" % tag)
+        return
+    if not src.endswith(".end method\n"):
+        if src.endswith(".end method"):
+            src += "\n"
+        else:
+            raise SystemExit("FILE DOES NOT END WITH .end method: %s" % path)
+    write(path, src + "\n" + text)
+    LOG.append("OK  %s" % tag)
+
+
+def write_file(path, content, tag):
+    if os.path.exists(path) and read(path) == content:
+        LOG.append("SKIP already applied: %s" % tag)
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    write(path, content)
+    LOG.append("OK  %s" % tag)
+
+
+# --------------------------------------------------------------------------
+# 1. Mode switch plumbing
+# --------------------------------------------------------------------------
+DEV_MODE_SMALI = '''\
+.class public final Lcom/sekolah/ujianbrowser/DevMode;
+.super Ljava/lang/Object;
+.source "DevMode.kt"
+
+
+# static fields
+.field public static modEnabled:Z
+
+
+# direct methods
+.method static constructor <clinit>()V
+    .locals 1
+
+    const/4 v0, 0x1
+
+    sput-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+
+    return-void
+.end method
+
+.method private constructor <init>()V
+    .locals 0
+
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    return-void
+.end method
+
+.method public static final init(Landroid/content/Context;)V
+    .locals 3
+    .param p0, "ctx"    # Landroid/content/Context;
+
+    :try_start_0
+    const-string v0, "ujian_dev"
+
+    const/4 v1, 0x0
+
+    invoke-virtual {p0, v0, v1}, Landroid/content/Context;->getSharedPreferences(Ljava/lang/String;I)Landroid/content/SharedPreferences;
+
+    move-result-object v0
+
+    const-string v1, "mod"
+
+    const/4 v2, 0x1
+
+    invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
+
+    move-result v0
+
+    sput-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+
+    goto :goto_0
+
+    :catch_0
+    move-exception v0
+
+    :goto_0
+    return-void
+.end method
+
+.method public static final set(Landroid/content/Context;Z)V
+    .locals 3
+    .param p0, "ctx"    # Landroid/content/Context;
+    .param p1, "mod"    # Z
+
+    :try_start_0
+    sput-boolean p1, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+
+    const-string v0, "ujian_dev"
+
+    const/4 v1, 0x0
+
+    invoke-virtual {p0, v0, v1}, Landroid/content/Context;->getSharedPreferences(Ljava/lang/String;I)Landroid/content/SharedPreferences;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v0
+
+    const-string v1, "mod"
+
+    invoke-interface {v0, v1, p1}, Landroid/content/SharedPreferences$Editor;->putBoolean(Ljava/lang/String;Z)Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Landroid/content/SharedPreferences$Editor;->apply()V
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+
+    goto :goto_0
+
+    :catch_0
+    move-exception v0
+
+    :goto_0
+    return-void
+.end method
+'''
+
+write_file(
+    os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/DevMode.smali"),
+    DEV_MODE_SMALI,
+    "DevMode.smali (mode switch holder, persisted in ujian_dev/mod)")
+
+# --------------------------------------------------------------------------
+# 2. ExamActivity - fields, touch hook, mode applier
+# --------------------------------------------------------------------------
 EXAM = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/ExamActivity.smali")
 
-replace_method(
-    EXAM, ".method private final enterLockMode()V", noop(),
-    "enterLockMode() -> no-op (no startLockTask / setLockTaskPackages / setLockTaskFeatures)")
-
-replace_method(
-    EXAM, ".method private final triggerIfLeaving()V", noop(),
-    "triggerIfLeaving() -> no-op (no leave-app detection)")
-
-replace_method(
-    EXAM, ".method private final startAlarm()V", noop(),
-    "startAlarm() -> no-op (no siren / violation counter)")
-
-replace_method(
-    EXAM, ".method private final forceSoundOn()V", noop(),
-    "forceSoundOn() -> no-op (volume + DND untouched)")
-
-replace_method(
-    EXAM, ".method private final startVibration()V", noop(),
-    "startVibration() -> no-op (no forced vibration)")
-
-replace_method(
-    EXAM, ".method private final playSiren()V", noop(),
-    "playSiren() -> no-op (no siren tone)")
+ensure_fields(EXAM, [
+    ".field private devBackCallback:Landroidx/activity/OnBackPressedCallback;",
+    "",
+    ".field private devIgnoreUntil:J",
+    "",
+    ".field private devLastTap:J",
+], "ExamActivity fields devBackCallback / devLastTap / devIgnoreUntil")
 
 replace_once(
     EXAM,
-    "    const/16 v1, 0x2080\n\n    invoke-virtual {v0, v1}, Landroid/view/Window;->addFlags(I)V",
-    "    const/16 v1, 0x80\n\n    invoke-virtual {v0, v1}, Landroid/view/Window;->addFlags(I)V",
-    "onCreate window flags 0x2080 -> 0x80 (FLAG_SECURE removed, FLAG_KEEP_SCREEN_ON kept)")
+    "    invoke-super {p0, p1}, Landroidx/appcompat/app/AppCompatActivity;->onCreate(Landroid/os/Bundle;)V",
+    "    invoke-super {p0, p1}, Landroidx/appcompat/app/AppCompatActivity;->onCreate(Landroid/os/Bundle;)V\n"
+    "\n"
+    "    invoke-static {p0}, Lcom/sekolah/ujianbrowser/DevMode;->init(Landroid/content/Context;)V",
+    "onCreate loads persisted mode before anything reads it")
 
-# ------------------------------------------------------- OnBackPressedCallback
+replace_once(
+    EXAM,
+    "    check-cast v2, Landroidx/activity/OnBackPressedCallback;\n"
+    "\n"
+    "    invoke-virtual {v0, v1, v2}, Landroidx/activity/OnBackPressedDispatcher;->addCallback(Landroidx/lifecycle/LifecycleOwner;Landroidx/activity/OnBackPressedCallback;)V",
+    "    check-cast v2, Landroidx/activity/OnBackPressedCallback;\n"
+    "\n"
+    "    iput-object v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBackCallback:Landroidx/activity/OnBackPressedCallback;\n"
+    "\n"
+    "    invoke-virtual {v0, v1, v2}, Landroidx/activity/OnBackPressedDispatcher;->addCallback(Landroidx/lifecycle/LifecycleOwner;Landroidx/activity/OnBackPressedCallback;)V",
+    "onCreate keeps a handle on the back callback so the mode can re-enable it")
+
+replace_once(
+    EXAM,
+    "    const/16 v1, 0x2080\n"
+    "\n"
+    "    invoke-virtual {v0, v1}, Landroid/view/Window;->addFlags(I)V",
+    "    sget-boolean v2, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z\n"
+    "\n"
+    "    if-eqz v2, :dev_mode_wflags_default\n"
+    "\n"
+    "    const/16 v1, 0x80\n"
+    "\n"
+    "    goto :dev_mode_wflags_done\n"
+    "\n"
+    "    :dev_mode_wflags_default\n"
+    "\n"
+    "    const/16 v1, 0x2080\n"
+    "\n"
+    "    :dev_mode_wflags_done\n"
+    "\n"
+    "    invoke-virtual {v0, v1}, Landroid/view/Window;->addFlags(I)V",
+    "onCreate window flags: FLAG_SECURE only in Mode Default")
+
+ensure_method(EXAM, ".method public dispatchTouchEvent(Landroid/view/MotionEvent;)Z", '''\
+.method public dispatchTouchEvent(Landroid/view/MotionEvent;)Z
+    .locals 8
+
+    invoke-super {p0, p1}, Landroid/app/Activity;->dispatchTouchEvent(Landroid/view/MotionEvent;)Z
+
+    move-result v0
+
+    invoke-virtual {p1}, Landroid/view/MotionEvent;->getActionMasked()I
+
+    move-result v1
+
+    const/4 v2, 0x1
+
+    if-ne v1, v2, :dev_tap_done
+
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+
+    move-result-wide v2
+
+    iget-wide v4, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devIgnoreUntil:J
+
+    cmp-long v1, v2, v4
+
+    if-ltz v1, :dev_tap_done
+
+    iget-wide v4, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devLastTap:J
+
+    const-wide/16 v6, 0x0
+
+    cmp-long v1, v4, v6
+
+    if-lez v1, :dev_tap_store
+
+    goto :dev_tap_have_last
+
+    :dev_tap_store
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+
+    move-result-wide v2
+
+    iput-wide v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devLastTap:J
+
+    goto :dev_tap_done
+
+    :dev_tap_have_last
+    sub-long/2addr v2, v4
+
+    const-wide/16 v6, 0x12c
+
+    cmp-long v1, v2, v6
+
+    if-gtz v1, :dev_tap_store
+
+    const-wide/16 v4, 0x0
+
+    iput-wide v4, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devLastTap:J
+
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+
+    move-result-wide v2
+
+    const-wide/16 v4, 0x2bc
+
+    add-long/2addr v2, v4
+
+    iput-wide v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devIgnoreUntil:J
+
+    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->devModeToggle()V
+
+    :dev_tap_done
+    return v0
+.end method
+''', "ExamActivity.dispatchTouchEvent (invisible double-tap detector)")
+
+ensure_method(EXAM, ".method private final devModeToggle()V", '''\
+.method private final devModeToggle()V
+    .locals 2
+
+    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+
+    if-eqz v0, :dev_toggle_default
+
+    const/4 v0, 0x0
+
+    goto :dev_toggle_apply
+
+    :dev_toggle_default
+    const/4 v0, 0x1
+
+    :dev_toggle_apply
+    invoke-static {p0, v0}, Lcom/sekolah/ujianbrowser/DevMode;->set(Landroid/content/Context;Z)V
+
+    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->devModeApply()V
+
+    return-void
+.end method
+''', "ExamActivity.devModeToggle (flip + persist + apply)")
+
+ensure_method(EXAM, ".method private final devModeApply()V", '''\
+.method private final devModeApply()V
+    .locals 6
+
+    invoke-virtual {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->getWindow()Landroid/view/Window;
+
+    move-result-object v0
+
+    sget-boolean v1, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+
+    if-eqz v1, :dev_apply_default
+
+    const/16 v1, 0x2000
+
+    invoke-virtual {v0, v1}, Landroid/view/Window;->clearFlags(I)V
+
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBackCallback:Landroidx/activity/OnBackPressedCallback;
+
+    if-eqz v1, :dev_mod_nocb
+
+    const/4 v2, 0x0
+
+    invoke-virtual {v1, v2}, Landroidx/activity/OnBackPressedCallback;->setEnabled(Z)V
+
+    :dev_mod_nocb
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->handler:Landroid/os/Handler;
+
+    iget-object v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->lockWatch:Lcom/sekolah/ujianbrowser/ExamActivity$lockWatch$1;
+
+    check-cast v2, Ljava/lang/Runnable;
+
+    invoke-virtual {v1, v2}, Landroid/os/Handler;->removeCallbacks(Ljava/lang/Runnable;)V
+
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->handler:Landroid/os/Handler;
+
+    iget-object v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->armCheck:Lcom/sekolah/ujianbrowser/ExamActivity$armCheck$1;
+
+    check-cast v2, Ljava/lang/Runnable;
+
+    invoke-virtual {v1, v2}, Landroid/os/Handler;->removeCallbacks(Ljava/lang/Runnable;)V
+
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->gateView:Landroid/widget/LinearLayout;
+
+    if-eqz v1, :dev_mod_nogate
+
+    invoke-virtual {v1}, Landroid/widget/LinearLayout;->getParent()Landroid/view/ViewParent;
+
+    move-result-object v2
+
+    instance-of v3, v2, Landroid/view/ViewGroup;
+
+    if-eqz v3, :dev_mod_rm
+
+    check-cast v2, Landroid/view/ViewGroup;
+
+    invoke-virtual {v2, v1}, Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V
+
+    :dev_mod_rm
+    const/4 v1, 0x0
+
+    iput-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->gateView:Landroid/widget/LinearLayout;
+
+    :dev_mod_nogate
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->webView:Landroid/webkit/WebView;
+
+    if-eqz v1, :dev_mod_wv
+
+    const/4 v2, 0x0
+
+    invoke-virtual {v1, v2}, Landroid/webkit/WebView;->setVisibility(I)V
+
+    :dev_mod_wv
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->reloadBtn:Landroid/widget/TextView;
+
+    if-eqz v1, :dev_mod_rb
+
+    const/16 v2, 0x8
+
+    invoke-virtual {v1, v2}, Landroid/widget/TextView;->setVisibility(I)V
+
+    :dev_mod_rb
+    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->stopAlarm()V
+
+    :try_start_0
+    invoke-virtual {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->stopLockTask()V
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :dev_mod_catch
+
+    goto :dev_apply_end
+
+    :dev_mod_catch
+    move-exception v1
+
+    :dev_apply_end
+    return-void
+
+    :dev_apply_default
+    const/16 v1, 0x2080
+
+    invoke-virtual {v0, v1}, Landroid/view/Window;->addFlags(I)V
+
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBackCallback:Landroidx/activity/OnBackPressedCallback;
+
+    if-eqz v1, :dev_def_nocb
+
+    const/4 v2, 0x1
+
+    invoke-virtual {v1, v2}, Landroidx/activity/OnBackPressedCallback;->setEnabled(Z)V
+
+    :dev_def_nocb
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->gateView:Landroid/widget/LinearLayout;
+
+    if-nez v1, :dev_def_havegate
+
+    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->buildGate()V
+
+    goto :dev_def_gate
+
+    :dev_def_havegate
+    iget-object v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->webView:Landroid/webkit/WebView;
+
+    if-eqz v2, :dev_def_wv
+
+    const/4 v3, 0x4
+
+    invoke-virtual {v2, v3}, Landroid/webkit/WebView;->setVisibility(I)V
+
+    :dev_def_wv
+    const/4 v2, 0x0
+
+    invoke-virtual {v1, v2}, Landroid/widget/LinearLayout;->setVisibility(I)V
+
+    :dev_def_gate
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->reloadBtn:Landroid/widget/TextView;
+
+    if-eqz v1, :dev_def_rb
+
+    const/16 v2, 0x8
+
+    invoke-virtual {v1, v2}, Landroid/widget/TextView;->setVisibility(I)V
+
+    :dev_def_rb
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->handler:Landroid/os/Handler;
+
+    iget-object v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->lockWatch:Lcom/sekolah/ujianbrowser/ExamActivity$lockWatch$1;
+
+    check-cast v2, Ljava/lang/Runnable;
+
+    invoke-virtual {v1, v2}, Landroid/os/Handler;->removeCallbacks(Ljava/lang/Runnable;)V
+
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->handler:Landroid/os/Handler;
+
+    iget-object v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->lockWatch:Lcom/sekolah/ujianbrowser/ExamActivity$lockWatch$1;
+
+    check-cast v2, Ljava/lang/Runnable;
+
+    invoke-virtual {v1, v2}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
+
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->handler:Landroid/os/Handler;
+
+    iget-object v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->armCheck:Lcom/sekolah/ujianbrowser/ExamActivity$armCheck$1;
+
+    check-cast v2, Ljava/lang/Runnable;
+
+    invoke-virtual {v1, v2}, Landroid/os/Handler;->removeCallbacks(Ljava/lang/Runnable;)V
+
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->handler:Landroid/os/Handler;
+
+    iget-object v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->armCheck:Lcom/sekolah/ujianbrowser/ExamActivity$armCheck$1;
+
+    check-cast v2, Ljava/lang/Runnable;
+
+    const-wide/16 v3, 0x1f4
+
+    invoke-virtual {v1, v2, v3, v4}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
+
+    return-void
+.end method
+''', "ExamActivity.devModeApply (reconcile window/back/gate/loops/alarm)")
+
+# --------------------------------------------------------------------------
+# 3. Every restriction now runs only in Mode Default
+# --------------------------------------------------------------------------
+add_guard(EXAM, ".method private final enterLockMode()V", "void",
+          "enterLockMode() -> skipped in Mode Mod (no startLockTask / setLockTaskPackages)")
+add_guard(EXAM, ".method private final triggerIfLeaving()V", "void",
+          "triggerIfLeaving() -> skipped in Mode Mod (no leave-app alarm)")
+add_guard(EXAM, ".method private final startAlarm()V", "void",
+          "startAlarm() -> skipped in Mode Mod (no siren / violation counter)")
+add_guard(EXAM, ".method private final forceSoundOn()V", "void",
+          "forceSoundOn() -> skipped in Mode Mod (volume + DND untouched)")
+add_guard(EXAM, ".method private final startVibration()V", "void",
+          "startVibration() -> skipped in Mode Mod (no forced vibration)")
+add_guard(EXAM, ".method private final playSiren()V", "void",
+          "playSiren() -> skipped in Mode Mod (no siren tone)")
+add_guard(EXAM, ".method private final buildGate()V", "void",
+          "buildGate() -> skipped in Mode Mod (gate overlay never built, WebView stays visible)")
+
 BACK = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/ExamActivity$onCreate$1.smali")
 replace_once(
     BACK,
-    "    const/4 v0, 0x1\n\n    invoke-direct {p0, v0}, Landroidx/activity/OnBackPressedCallback;-><init>(Z)V",
-    "    const/4 v0, 0x0\n\n    invoke-direct {p0, v0}, Landroidx/activity/OnBackPressedCallback;-><init>(Z)V",
-    "OnBackPressedCallback enabled true -> false (Back uses Android default = finish)")
+    "    const/4 v0, 0x1\n"
+    "\n"
+    "    invoke-direct {p0, v0}, Landroidx/activity/OnBackPressedCallback;-><init>(Z)V",
+    "    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z\n"
+    "\n"
+    "    if-eqz v0, :dev_mode_cb_default\n"
+    "\n"
+    "    const/4 v0, 0x0\n"
+    "\n"
+    "    goto :dev_mode_cb_done\n"
+    "\n"
+    "    :dev_mode_cb_default\n"
+    "\n"
+    "    const/4 v0, 0x1\n"
+    "\n"
+    "    :dev_mode_cb_done\n"
+    "\n"
+    "    invoke-direct {p0, v0}, Landroidx/activity/OnBackPressedCallback;-><init>(Z)V",
+    "OnBackPressedCallback enabled only in Mode Default (Back exits in Mode Mod)")
 
-# ------------------------------------------------------------------- armCheck
 ARM = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/ExamActivity$armCheck$1.smali")
-replace_method(
-    ARM, ".method public run()V", noop(),
-    "armCheck.run() -> no-op (never arms the violation detector)")
-
-# -------------------------------------------------------------------- ExamLock
-LOCK = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/ExamLock.smali")
-replace_method(
-    LOCK, ".method public final remainingMs(Landroid/content/Context;)J",
-    ["    .locals 2", "", "    const-wide/16 v0, 0x0", "", "    return-wide v0"],
-    "ExamLock.remainingMs() -> always 0 (60-minute exam lock timer removed)")
-
-# -------------------------------------------------------------------- AdminCode
-ADMIN = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/AdminCode.smali")
-replace_method(
-    ADMIN, ".method public final lockedMs(Landroid/content/Context;)J",
-    ["    .locals 2", "", "    const-wide/16 v0, 0x0", "", "    return-wide v0"],
-    "AdminCode.lockedMs() -> always 0 (admin lockout timer removed)")
-
-replace_method(
-    ADMIN, ".method public final verify(Landroid/content/Context;Ljava/lang/String;Z)Z",
-    ["    .locals 1", "", "    const/4 v0, 0x1", "", "    return v0"],
-    "AdminCode.verify() -> always true (exit gate removed)")
-
-# ----------------------------------------------------- v3 gate + lock watchdog
-# v3 (versionCode 3) added an overlay gate that hides the WebView whenever lock
-# task is not active. Both the gate builder and its 700ms watchdog must go.
-if os.path.exists(EXAM):
-    if ".method private final buildGate()V" in read(EXAM):
-        replace_method(EXAM, ".method private final buildGate()V", noop(),
-                       "buildGate() -> no-op (gate overlay never built, WebView stays visible)")
-    else:
-        LOG.append("SKIP buildGate() (not present in this version)")
+add_guard(ARM, ".method public run()V", "void",
+          "armCheck.run() -> skipped in Mode Mod (violation detector never armed)")
 
 LOCKWATCH = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/ExamActivity$lockWatch$1.smali")
 if os.path.exists(LOCKWATCH):
-    replace_method(LOCKWATCH, ".method public run()V", noop(),
-                   "lockWatch.run() -> no-op (lock-task watchdog never hides WebView)")
+    add_guard(LOCKWATCH, ".method public run()V", "void",
+              "lockWatch.run() -> skipped in Mode Mod (lock-task watchdog never hides WebView)")
 else:
     LOG.append("SKIP lockWatch (not present in this version)")
+
+LOCK = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/ExamLock.smali")
+add_guard(LOCK, ".method public final remainingMs(Landroid/content/Context;)J", "long",
+          "ExamLock.remainingMs() -> 0 in Mode Mod (60-minute exam timer inactive)")
+
+ADMIN = os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/AdminCode.smali")
+add_guard(ADMIN, ".method public final lockedMs(Landroid/content/Context;)J", "long",
+          "AdminCode.lockedMs() -> 0 in Mode Mod (admin lockout timer inactive)")
+add_guard(ADMIN, ".method public final verify(Landroid/content/Context;Ljava/lang/String;Z)Z", "bool",
+          "AdminCode.verify() -> always true in Mode Mod (exit gate removed)")
 
 print("\n".join(LOG))
 print("TOTAL PATCHES: %d" % len(LOG))

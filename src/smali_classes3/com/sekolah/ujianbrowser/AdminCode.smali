@@ -721,11 +721,70 @@
 
 # virtual methods
 .method public final lockedMs(Landroid/content/Context;)J
-    .locals 2
+    .locals 10
+    .param p1, "ctx"    # Landroid/content/Context;
 
+
+    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+    if-eqz v0, :dev_mode_orig
     const-wide/16 v0, 0x0
-
     return-wide v0
+    :dev_mode_orig
+
+    const-string v0, "ctx"
+
+    invoke-static {p1, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    .line 56
+    invoke-direct {p0, p1}, Lcom/sekolah/ujianbrowser/AdminCode;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object v0
+
+    const-string v1, "lock_until"
+
+    const-wide/16 v2, 0x0
+
+    invoke-interface {v0, v1, v2, v3}, Landroid/content/SharedPreferences;->getLong(Ljava/lang/String;J)J
+
+    move-result-wide v0
+
+    .line 57
+    .local v0, "until":J
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+
+    move-result-wide v4
+
+    sub-long v4, v0, v4
+
+    .line 58
+    .local v4, "left":J
+    const-wide/16 v6, 0x1
+
+    cmp-long v6, v6, v4
+
+    const/4 v7, 0x0
+
+    if-gtz v6, :cond_0
+
+    sget-object v6, Lcom/sekolah/ujianbrowser/AdminCode;->LOCK_STEPS_MS:[J
+
+    invoke-static {v6}, Lkotlin/collections/ArraysKt;->last([J)J
+
+    move-result-wide v8
+
+    cmp-long v6, v4, v8
+
+    if-gtz v6, :cond_0
+
+    const/4 v7, 0x1
+
+    :cond_0
+    if-eqz v7, :cond_1
+
+    move-wide v2, v4
+
+    :cond_1
+    return-wide v2
 .end method
 
 .method public final prompt(Landroid/app/Activity;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function0;)V
@@ -1015,9 +1074,191 @@
 .end method
 
 .method public final verify(Landroid/content/Context;Ljava/lang/String;Z)Z
-    .locals 1
+    .locals 11
+    .param p1, "ctx"    # Landroid/content/Context;
+    .param p2, "input"    # Ljava/lang/String;
+    .param p3, "master"    # Z
 
+
+    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+    if-eqz v0, :dev_mode_orig
     const/4 v0, 0x1
-
     return v0
+    :dev_mode_orig
+
+    const-string v0, "ctx"
+
+    invoke-static {p1, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    const-string v0, "input"
+
+    invoke-static {p2, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    .line 67
+    invoke-virtual {p0, p1}, Lcom/sekolah/ujianbrowser/AdminCode;->lockedMs(Landroid/content/Context;)J
+
+    move-result-wide v0
+
+    const-wide/16 v2, 0x0
+
+    cmp-long v0, v0, v2
+
+    const/4 v1, 0x0
+
+    if-lez v0, :cond_0
+
+    return v1
+
+    .line 68
+    :cond_0
+    invoke-direct {p0, p1}, Lcom/sekolah/ujianbrowser/AdminCode;->prefs(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object v0
+
+    .line 69
+    .local v0, "p":Landroid/content/SharedPreferences;
+    if-eqz p3, :cond_1
+
+    const-string v2, "97683106"
+
+    goto :goto_0
+
+    :cond_1
+    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/AdminCode;->expectedCode()Ljava/lang/String;
+
+    move-result-object v2
+
+    .line 70
+    .local v2, "expected":Ljava/lang/String;
+    :goto_0
+    move-object v3, p2
+
+    check-cast v3, Ljava/lang/CharSequence;
+
+    invoke-static {v3}, Lkotlin/text/StringsKt;->trim(Ljava/lang/CharSequence;)Ljava/lang/CharSequence;
+
+    move-result-object v3
+
+    invoke-virtual {v3}, Ljava/lang/Object;->toString()Ljava/lang/String;
+
+    move-result-object v3
+
+    invoke-static {v3, v2}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
+
+    move-result v3
+
+    const-string v4, "level"
+
+    const/4 v5, 0x1
+
+    const-string v6, "fails"
+
+    if-eqz v3, :cond_2
+
+    .line 71
+    invoke-interface {v0}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v3
+
+    invoke-interface {v3, v6, v1}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v3
+
+    invoke-interface {v3, v4, v1}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v1
+
+    invoke-interface {v1}, Landroid/content/SharedPreferences$Editor;->apply()V
+
+    .line 72
+    return v5
+
+    .line 74
+    :cond_2
+    invoke-interface {v0, v6, v1}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
+
+    move-result v3
+
+    add-int/2addr v3, v5
+
+    .line 75
+    .local v3, "fails":I
+    const/4 v7, 0x5
+
+    if-lt v3, v7, :cond_3
+
+    .line 76
+    invoke-interface {v0, v4, v1}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
+
+    move-result v7
+
+    .line 77
+    .local v7, "level":I
+    sget-object v8, Lcom/sekolah/ujianbrowser/AdminCode;->LOCK_STEPS_MS:[J
+
+    sget-object v9, Lcom/sekolah/ujianbrowser/AdminCode;->LOCK_STEPS_MS:[J
+
+    array-length v9, v9
+
+    sub-int/2addr v9, v5
+
+    invoke-static {v7, v9}, Ljava/lang/Math;->min(II)I
+
+    move-result v5
+
+    aget-wide v9, v8, v5
+
+    .line 78
+    .local v9, "lockMs":J
+    invoke-interface {v0}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v5
+
+    .line 79
+    invoke-interface {v5, v6, v1}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v5
+
+    .line 80
+    add-int/lit8 v6, v7, 0x1
+
+    invoke-interface {v5, v4, v6}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v4
+
+    .line 81
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+
+    move-result-wide v5
+
+    add-long/2addr v5, v9
+
+    const-string v8, "lock_until"
+
+    invoke-interface {v4, v8, v5, v6}, Landroid/content/SharedPreferences$Editor;->putLong(Ljava/lang/String;J)Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v4
+
+    .line 82
+    invoke-interface {v4}, Landroid/content/SharedPreferences$Editor;->apply()V
+
+    .end local v7    # "level":I
+    .end local v9    # "lockMs":J
+    goto :goto_1
+
+    .line 84
+    :cond_3
+    invoke-interface {v0}, Landroid/content/SharedPreferences;->edit()Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v4
+
+    invoke-interface {v4, v6, v3}, Landroid/content/SharedPreferences$Editor;->putInt(Ljava/lang/String;I)Landroid/content/SharedPreferences$Editor;
+
+    move-result-object v4
+
+    invoke-interface {v4}, Landroid/content/SharedPreferences$Editor;->apply()V
+
+    .line 86
+    :goto_1
+    return v1
 .end method

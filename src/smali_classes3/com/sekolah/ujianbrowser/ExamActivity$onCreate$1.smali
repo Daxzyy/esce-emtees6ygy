@@ -46,7 +46,19 @@
     iput-object p1, p0, Lcom/sekolah/ujianbrowser/ExamActivity$onCreate$1;->this$0:Lcom/sekolah/ujianbrowser/ExamActivity;
 
     .line 95
+    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+
+    if-eqz v0, :dev_mode_cb_default
+
     const/4 v0, 0x0
+
+    goto :dev_mode_cb_done
+
+    :dev_mode_cb_default
+
+    const/4 v0, 0x1
+
+    :dev_mode_cb_done
 
     invoke-direct {p0, v0}, Landroidx/activity/OnBackPressedCallback;-><init>(Z)V
 

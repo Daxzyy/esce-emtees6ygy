@@ -257,11 +257,49 @@
 .end method
 
 .method public final remainingMs(Landroid/content/Context;)J
-    .locals 2
+    .locals 7
+    .param p1, "ctx"    # Landroid/content/Context;
 
+
+    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+    if-eqz v0, :dev_mode_orig
     const-wide/16 v0, 0x0
+    return-wide v0
+    :dev_mode_orig
+
+    const-string v0, "ctx"
+
+    invoke-static {p1, v0}, Lkotlin/jvm/internal/Intrinsics;->checkNotNullParameter(Ljava/lang/Object;Ljava/lang/String;)V
+
+    .line 45
+    invoke-direct {p0, p1}, Lcom/sekolah/ujianbrowser/ExamLock;->elapsedMs(Landroid/content/Context;)Ljava/lang/Long;
+
+    move-result-object v0
+
+    const-wide/16 v1, 0x0
+
+    if-eqz v0, :cond_0
+
+    invoke-virtual {v0}, Ljava/lang/Long;->longValue()J
+
+    move-result-wide v3
+
+    .line 46
+    .local v3, "e":J
+    const-wide/32 v5, 0x36ee80
+
+    sub-long/2addr v5, v3
+
+    invoke-static {v1, v2, v5, v6}, Ljava/lang/Math;->max(JJ)J
+
+    move-result-wide v0
 
     return-wide v0
+
+    .line 45
+    .end local v3    # "e":J
+    :cond_0
+    return-wide v1
 .end method
 
 .method public final remainingText(Landroid/content/Context;)Ljava/lang/String;
