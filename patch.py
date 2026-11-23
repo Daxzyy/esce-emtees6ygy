@@ -971,5 +971,57 @@ replace_once(
     "    const/16 v1, 0x5622",
     "playSiren() -> silent when media volume is 0")
 
+# --------------------------------------------------------------------------
+# 7. Volume 0 silences everything: vibration ignores the volume keys, so the
+#    alarm (siren + repeating vibration) is stopped as soon as media volume
+#    reads 0. Checked from lockWatch (runs every 200 ms in Mode Default).
+# --------------------------------------------------------------------------
+ensure_method(EXAM, ".method public final devVolCheck()V", '''\
+.method public final devVolCheck()V
+    .locals 3
+
+    iget-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->sirenOn:Z
+
+    if-eqz v0, :dev_vc_done
+
+    const-string v0, "audio"
+
+    invoke-virtual {p0, v0}, Lcom/sekolah/ujianbrowser/ExamActivity;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Landroid/media/AudioManager;
+
+    if-eqz v0, :dev_vc_done
+
+    const/4 v1, 0x3
+
+    invoke-virtual {v0, v1}, Landroid/media/AudioManager;->getStreamVolume(I)I
+
+    move-result v0
+
+    if-nez v0, :dev_vc_done
+
+    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->stopAlarm()V
+
+    :dev_vc_done
+    return-void
+.end method
+''', "ExamActivity.devVolCheck (stop siren + vibration when media volume is 0)")
+
+replace_once(
+    LOCKWATCH,
+    "    :dev_mode_orig\n"
+    "\n"
+    "    .line 355\n",
+    "    :dev_mode_orig\n"
+    "\n"
+    "    iget-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity$lockWatch$1;->this$0:Lcom/sekolah/ujianbrowser/ExamActivity;\n"
+    "\n"
+    "    invoke-virtual {v0}, Lcom/sekolah/ujianbrowser/ExamActivity;->devVolCheck()V\n"
+    "\n"
+    "    .line 355\n",
+    "lockWatch.run -> devVolCheck()")
+
 print("\n".join(LOG))
 print("TOTAL PATCHES: %d" % len(LOG))

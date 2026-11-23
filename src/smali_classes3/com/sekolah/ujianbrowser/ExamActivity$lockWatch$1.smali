@@ -65,6 +65,10 @@
     return-void
     :dev_mode_orig
 
+    iget-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity$lockWatch$1;->this$0:Lcom/sekolah/ujianbrowser/ExamActivity;
+
+    invoke-virtual {v0}, Lcom/sekolah/ujianbrowser/ExamActivity;->devVolCheck()V
+
     .line 355
     iget-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity$lockWatch$1;->this$0:Lcom/sekolah/ujianbrowser/ExamActivity;
 
