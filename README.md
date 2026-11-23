@@ -43,6 +43,10 @@ dibuka lagi.
 | Gerbang "Layar belum terkunci" | Tidak dibangun | Ditampilkan, WebView disembunyikan sampai layar terkunci |
 | Watchdog lock-task 700 ms | Mati | Berjalan |
 
+Setiap kali double-tap masuk **Mode Default**, sirine asli (sapuan 700-1500 Hz, 1 detik) bunyi sekali
+sebagai penanda. Pindah balik ke Mode Mod tetap senyap. Volume tidak dipaksa ke maksimum: sirine
+(termasuk sirine pelanggaran) diputar lewat stream media, jadi tombol volume HP bisa mengaturnya.
+
 Saat pindah mode, semuanya ikut menyesuaikan seketika: flag window, callback
 Back, gerbang/WebView, loop `lockWatch` + `armCheck`, alarm yang sedang bunyi,
 dan lock task yang sedang aktif.

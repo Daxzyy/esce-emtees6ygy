@@ -1349,9 +1349,6 @@
 .method private final forceSoundOn()V
     .locals 4
 
-
-    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
-    if-eqz v0, :dev_mode_orig
     return-void
     :dev_mode_orig
 
@@ -1550,7 +1547,9 @@
     invoke-direct {v6}, Landroid/media/AudioAttributes$Builder;-><init>()V
 
     .line 527
-    invoke-virtual {v6, v3}, Landroid/media/AudioAttributes$Builder;->setUsage(I)Landroid/media/AudioAttributes$Builder;
+    const/4 v7, 0x1
+
+    invoke-virtual {v6, v7}, Landroid/media/AudioAttributes$Builder;->setUsage(I)Landroid/media/AudioAttributes$Builder;
 
     move-result-object v6
 
@@ -2912,6 +2911,21 @@
 
     invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->devModeApply()V
 
+    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+
+    if-nez v0, :dev_toggle_quiet
+
+    new-instance v0, Ljava/lang/Thread;
+
+    new-instance v1, Lcom/sekolah/ujianbrowser/DevBeep;
+
+    invoke-direct {v1}, Lcom/sekolah/ujianbrowser/DevBeep;-><init>()V
+
+    invoke-direct {v0, v1}, Ljava/lang/Thread;-><init>(Ljava/lang/Runnable;)V
+
+    invoke-virtual {v0}, Ljava/lang/Thread;->start()V
+
+    :dev_toggle_quiet
     return-void
 .end method
 

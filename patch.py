@@ -63,7 +63,7 @@ def add_guard(path, signature, kind, tag):
     lines = read(path).split("\n")
     start, end = _span(lines, signature)
     body = lines[start + 1:end]
-    if any("DevMode;->modEnabled" in ln for ln in body):
+    if any("DevMode;->modEnabled" in ln or ln.strip() == ":dev_mode_orig" for ln in body):
         LOG.append("SKIP already applied: %s" % tag)
         return
 
@@ -397,9 +397,24 @@ ensure_method(EXAM, ".method private final devModeToggle()V", '''\
 
     invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->devModeApply()V
 
+    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z
+
+    if-nez v0, :dev_toggle_quiet
+
+    new-instance v0, Ljava/lang/Thread;
+
+    new-instance v1, Lcom/sekolah/ujianbrowser/DevBeep;
+
+    invoke-direct {v1}, Lcom/sekolah/ujianbrowser/DevBeep;-><init>()V
+
+    invoke-direct {v0, v1}, Ljava/lang/Thread;-><init>(Ljava/lang/Runnable;)V
+
+    invoke-virtual {v0}, Ljava/lang/Thread;->start()V
+
+    :dev_toggle_quiet
     return-void
 .end method
-''', "ExamActivity.devModeToggle (flip + persist + apply)")
+''', "ExamActivity.devModeToggle (flip + persist + apply + siren burst into Mode Default)")
 
 ensure_method(EXAM, ".method private final devModeApply()V", '''\
 .method private final devModeApply()V
@@ -642,6 +657,240 @@ add_guard(ADMIN, ".method public final lockedMs(Landroid/content/Context;)J", "l
           "AdminCode.lockedMs() -> 0 in Mode Mod (admin lockout timer inactive)")
 add_guard(ADMIN, ".method public final verify(Landroid/content/Context;Ljava/lang/String;Z)Z", "bool",
           "AdminCode.verify() -> always true in Mode Mod (exit gate removed)")
+
+
+# --------------------------------------------------------------------------
+# 4. Siren feedback on entering Mode Default + user-adjustable volume
+# --------------------------------------------------------------------------
+DEV_BEEP_SMALI = '''\
+.class public final Lcom/sekolah/ujianbrowser/DevBeep;
+.super Ljava/lang/Object;
+.source "DevBeep.kt"
+
+.implements Ljava/lang/Runnable;
+
+
+.method public constructor <init>()V
+    .locals 0
+
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    return-void
+.end method
+
+.method public run()V
+    .locals 18
+
+    const/16 v0, 0x5622
+
+    :try_start_0
+    const/4 v2, 0x4
+
+    const/4 v3, 0x2
+
+    invoke-static {v0, v2, v3}, Landroid/media/AudioTrack;->getMinBufferSize(III)I
+
+    move-result v4
+
+    invoke-static {v4, v0}, Ljava/lang/Math;->max(II)I
+
+    move-result v4
+
+    new-instance v10, Landroid/media/AudioTrack;
+
+    const/4 v11, 0x3
+
+    move v12, v0
+
+    const/4 v13, 0x4
+
+    const/4 v14, 0x2
+
+    move v15, v4
+
+    const/16 v16, 0x1
+
+    invoke-direct/range {v10 .. v16}, Landroid/media/AudioTrack;-><init>(IIIIII)V
+
+    move-object v1, v10
+
+    invoke-virtual {v1}, Landroid/media/AudioTrack;->play()V
+
+    div-int/lit8 v2, v0, 0xa
+
+    new-array v3, v2, [S
+
+    const-wide/16 v6, 0x0
+
+    const-wide v13, 0x401921fb54442d18L
+
+    const/4 v5, 0x0
+
+    const/4 v4, 0x0
+
+    :chunk_loop
+    const/16 v8, 0xa
+
+    if-ge v4, v8, :chunk_done
+
+    const/4 v8, 0x0
+
+    :sample_loop
+    if-ge v8, v2, :sample_done
+
+    int-to-double v9, v5
+
+    int-to-double v15, v0
+
+    div-double/2addr v9, v15
+
+    const-wide/high16 v11, 0x3fe0000000000000L
+
+    cmpg-double v17, v9, v11
+
+    const-wide/high16 v11, 0x4000000000000000L
+
+    if-gez v17, :sweep_down
+
+    mul-double/2addr v11, v9
+
+    goto :sweep_done
+
+    :sweep_down
+    const-wide/high16 v15, 0x3ff0000000000000L
+
+    sub-double/2addr v15, v9
+
+    mul-double/2addr v11, v15
+
+    :sweep_done
+    const-wide/high16 v15, 0x4089000000000000L
+
+    mul-double/2addr v11, v15
+
+    const-wide v15, 0x4085e00000000000L
+
+    add-double/2addr v11, v15
+
+    mul-double/2addr v11, v13
+
+    int-to-double v15, v0
+
+    div-double/2addr v11, v15
+
+    add-double/2addr v6, v11
+
+    cmpl-double v17, v6, v13
+
+    if-lez v17, :phase_ok
+
+    sub-double/2addr v6, v13
+
+    :phase_ok
+    invoke-static {v6, v7}, Ljava/lang/Math;->sin(D)D
+
+    move-result-wide v11
+
+    const-wide v15, 0x40df400000000000L
+
+    mul-double/2addr v11, v15
+
+    double-to-int v15, v11
+
+    int-to-short v15, v15
+
+    aput-short v15, v3, v8
+
+    add-int/lit8 v5, v5, 0x1
+
+    rem-int/2addr v5, v0
+
+    add-int/lit8 v8, v8, 0x1
+
+    goto :sample_loop
+
+    :sample_done
+    const/4 v8, 0x0
+
+    invoke-virtual {v1, v3, v8, v2}, Landroid/media/AudioTrack;->write([SII)I
+
+    add-int/lit8 v4, v4, 0x1
+
+    goto :chunk_loop
+
+    :chunk_done
+    invoke-virtual {v1}, Landroid/media/AudioTrack;->stop()V
+
+    invoke-virtual {v1}, Landroid/media/AudioTrack;->release()V
+
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+
+    return-void
+
+    :catch_0
+    move-exception v0
+
+    return-void
+.end method
+'''
+
+write_file(
+    os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/DevBeep.smali"),
+    DEV_BEEP_SMALI,
+    "DevBeep.smali (one-second siren sweep on the music stream, plays when entering Mode Default)")
+
+replace_once(
+    EXAM,
+    ".method private final forceSoundOn()V\n"
+    "    .locals 4\n"
+    "\n"
+    "\n"
+    "    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z\n"
+    "    if-eqz v0, :dev_mode_orig\n"
+    "    return-void\n"
+    "    :dev_mode_orig\n",
+    ".method private final forceSoundOn()V\n"
+    "    .locals 4\n"
+    "\n"
+    "    return-void\n"
+    "    :dev_mode_orig\n",
+    "forceSoundOn() -> never forces alarm volume or DND (volume stays user-adjustable)")
+
+replace_once(
+    EXAM,
+    "    invoke-virtual {v6, v3}, Landroid/media/AudioAttributes$Builder;->setUsage(I)Landroid/media/AudioAttributes$Builder;",
+    "    const/4 v7, 0x1\n"
+    "\n"
+    "    invoke-virtual {v6, v7}, Landroid/media/AudioAttributes$Builder;->setUsage(I)Landroid/media/AudioAttributes$Builder;",
+    "playSiren() -> media usage so the volume keys control the siren")
+
+replace_once(
+    EXAM,
+    "    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->devModeApply()V\n"
+    "\n"
+    "    return-void\n"
+    ".end method",
+    "    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->devModeApply()V\n"
+    "\n"
+    "    sget-boolean v0, Lcom/sekolah/ujianbrowser/DevMode;->modEnabled:Z\n"
+    "\n"
+    "    if-nez v0, :dev_toggle_quiet\n"
+    "\n"
+    "    new-instance v0, Ljava/lang/Thread;\n"
+    "\n"
+    "    new-instance v1, Lcom/sekolah/ujianbrowser/DevBeep;\n"
+    "\n"
+    "    invoke-direct {v1}, Lcom/sekolah/ujianbrowser/DevBeep;-><init>()V\n"
+    "\n"
+    "    invoke-direct {v0, v1}, Ljava/lang/Thread;-><init>(Ljava/lang/Runnable;)V\n"
+    "\n"
+    "    invoke-virtual {v0}, Ljava/lang/Thread;->start()V\n"
+    "\n"
+    "    :dev_toggle_quiet\n"
+    "    return-void\n"
+    ".end method",
+    "devModeToggle() -> siren burst when entering Mode Default")
 
 print("\n".join(LOG))
 print("TOTAL PATCHES: %d" % len(LOG))
