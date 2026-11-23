@@ -126,7 +126,7 @@
 
     move-result-wide v11
 
-    const-wide v15, 0x40df400000000000L
+    const-wide v15, 0x40bf400000000000L
 
     mul-double/2addr v11, v15
 

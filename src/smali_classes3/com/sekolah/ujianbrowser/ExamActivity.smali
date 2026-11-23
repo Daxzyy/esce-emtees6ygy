@@ -1732,7 +1732,7 @@
 
     move-result-wide v3
 
-    const-wide v17, 0x40df400000000000L    # 32000.0
+    const-wide v17, 0x40bf400000000000L    # 8000.0
 
     mul-double v3, v3, v17
 

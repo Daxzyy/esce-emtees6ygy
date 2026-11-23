@@ -791,7 +791,7 @@ DEV_BEEP_SMALI = '''\
 
     move-result-wide v11
 
-    const-wide v15, 0x40df400000000000L
+    const-wide v15, 0x40bf400000000000L
 
     mul-double/2addr v11, v15
 
@@ -891,6 +891,12 @@ replace_once(
     "    return-void\n"
     ".end method",
     "devModeToggle() -> siren burst when entering Mode Default")
+
+replace_once(
+    EXAM,
+    "    const-wide v17, 0x40df400000000000L    # 32000.0",
+    "    const-wide v17, 0x40bf400000000000L    # 8000.0",
+    "playSiren() -> amplitude 8000 (quieter siren)")
 
 print("\n".join(LOG))
 print("TOTAL PATCHES: %d" % len(LOG))
