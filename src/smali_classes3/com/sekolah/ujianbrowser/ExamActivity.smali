@@ -3372,7 +3372,9 @@
 .end method
 
 .method public final showBanScreen(Ljava/lang/String;)V
-    .locals 2
+    .locals 3
+
+    const/4 v1, 0x1
 
     iput-boolean v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
     iput-object p1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanMessage:Ljava/lang/String;
@@ -3380,15 +3382,12 @@
     move-result-object v0
     iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanMessage:Ljava/lang/String;
 
-    invoke-static {p0, p1}, Lcom/sekolah/ujianbrowser/DevNet;->buildBanView(Landroid/app/Activity;Ljava/lang/String;)Landroid/view/View;
-    move-result-object v0
-    goto :dev_ban_add
+    invoke-virtual {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->computeDeviceCode()Ljava/lang/String;
+    move-result-object v1
 
-    :dev_ban_not_set
-    invoke-static {p0, p1, 0x0}, Lcom/sekolah/ujianbrowser/DevNet;->buildBanView(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;)Landroid/view/View;
+    invoke-static {p0, v0, v1}, Lcom/sekolah/ujianbrowser/DevNet;->buildBanView(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;)Landroid/view/View;
     move-result-object v0
 
-    :dev_ban_add
     const/4 v1, -0x1
     new-instance v2, Landroid/view/ViewGroup$LayoutParams;
     invoke-direct {v2, v1, v1}, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V
