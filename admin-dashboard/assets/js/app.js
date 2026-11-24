@@ -533,12 +533,10 @@ function showDash() {
 
   qs("#app").innerHTML =
     '<header class="topbar"><div class="topbar-in">' +
-      '<div class="brand"><div class="brand-mark">' + ICON_SHIELD + '</div>' +
-      '<div class="brand-text"><strong>UjianBrowser</strong><small>Admin Dashboard</small></div></div>' +
+      '<div class="brand-text"><strong>Perangkat</strong><span class="conn" id="conn" role="status"></span></div>' +
       '<div class="top-actions">' +
-        '<span class="conn" id="conn"></span>' +
-        '<button class="btn ghost icon-btn" type="button" id="theme" aria-label="Ganti tema" title="Ganti tema">' + ICON_SUN + ICON_MOON + '</button>' +
-        '<button class="btn ghost logout" type="button" id="logout">' + ICON_LOGOUT + '<span class="lbl">Logout</span></button>' +
+        '<button class="btn icon-btn sq" type="button" id="theme" aria-label="Ganti tema" title="Ganti tema">' + ICON_SUN + ICON_MOON + '</button>' +
+        '<button class="btn icon-btn sq logout" type="button" id="logout" aria-label="Logout" title="Logout">' + ICON_LOGOUT + '</button>' +
       '</div>' +
     '</div></header>' +
     '<main class="page">' +
