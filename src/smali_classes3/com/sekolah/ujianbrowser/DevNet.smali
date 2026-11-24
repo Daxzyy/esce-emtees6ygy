@@ -429,20 +429,6 @@
 
     invoke-static {v0, v1, v2}, Lcom/sekolah/ujianbrowser/DevNet;->ps(Lorg/json/JSONObject;Ljava/lang/String;Ljava/lang/String;)V
 
-    const-string v1, "deviceName"
-
-    invoke-virtual {p0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
-
-    move-result-object v2
-
-    const-string v3, "device_name"
-
-    invoke-static {v2, v3}, Landroid/provider/Settings$Global;->getString(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v2
-
-    invoke-static {v0, v1, v2}, Lcom/sekolah/ujianbrowser/DevNet;->ps(Lorg/json/JSONObject;Ljava/lang/String;Ljava/lang/String;)V
-
     const/4 v3, 0x0
 
     const/4 v4, 0x0
@@ -586,11 +572,17 @@
 
     const-string v1, "lastSeen"
 
-    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
+    new-instance v2, Lorg/json/JSONObject;
 
-    move-result-wide v2
+    invoke-direct {v2}, Lorg/json/JSONObject;-><init>()V
 
-    invoke-static {v0, v1, v2, v3}, Lcom/sekolah/ujianbrowser/DevNet;->pl(Lorg/json/JSONObject;Ljava/lang/String;J)V
+    const-string v3, ".sv"
+
+    const-string v4, "timestamp"
+
+    invoke-virtual {v2, v3, v4}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
+
+    invoke-virtual {v0, v1, v2}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
     :try_end_0
     .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
 
