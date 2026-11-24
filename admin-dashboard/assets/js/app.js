@@ -242,12 +242,15 @@ async function refresh() {
   }
 }
 
-function setConn(ok) {
+let connOk = true;
+// Jam live: diperbarui tiap detik oleh tick, bukan cuma pas fetch (fetch tiap 4 dtk bikin angka loncat)
+function renderConn() {
   const el = qs("#conn");
   if (!el) return;
-  el.classList.toggle("err", !ok);
-  el.textContent = ok ? "Diperbarui " + fmtClock(nowMs()) : "Gagal memuat, mencoba lagi...";
+  el.classList.toggle("err", !connOk);
+  el.textContent = connOk ? "Live \u00b7 " + fmtClock(nowMs()) : "Gagal memuat, mencoba lagi...";
 }
+function setConn(ok) { connOk = ok; renderConn(); }
 
 /* ===================== Render ===================== */
 function decorate(r, now) {
@@ -533,7 +536,7 @@ function showDash() {
 
   qs("#app").innerHTML =
     '<header class="topbar"><div class="topbar-in">' +
-      '<div class="brand-text"><strong>Perangkat</strong><span class="conn" id="conn" role="status"></span></div>' +
+      '<div class="brand-text"><strong>Perangkat</strong><span class="conn" id="conn"></span></div>' +
       '<div class="top-actions">' +
         '<button class="btn icon-btn sq" type="button" id="theme" aria-label="Ganti tema" title="Ganti tema">' + ICON_SUN + ICON_MOON + '</button>' +
         '<button class="btn icon-btn sq logout" type="button" id="logout" aria-label="Logout" title="Logout">' + ICON_LOGOUT + '</button>' +
@@ -579,7 +582,7 @@ function showDash() {
   render();
   refresh();
   pollTimer = setInterval(refresh, REFRESH_MS);
-  tickTimer = setInterval(render, 1000); // update status Online/"Terakhir dilihat" tanpa fetch
+  tickTimer = setInterval(function () { renderConn(); render(); }, 1000); // update status Online/"Terakhir dilihat" tanpa fetch
 }
 
 function showLogin() {
