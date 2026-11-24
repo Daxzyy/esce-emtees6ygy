@@ -226,9 +226,11 @@ async function refresh() {
     if (my !== session) return;
     const ownerMap = owners && typeof owners === "object" ? owners : {};
     const banMap = bans && typeof bans === "object" ? bans : {};
-    devices = Object.entries(devs || {}).map(([code, v]) =>
-      Object.assign({}, v && typeof v === "object" ? v : {}, { code, banned: isBanned(banMap[code]), owner: typeof ownerMap[code] === "string" ? ownerMap[code] : "" })
-    );
+    devices = Object.entries(devs || {}).map(([code, v]) => {
+      const ban = banMap[code];
+      const banMsg = ban && typeof ban === "object" && typeof ban.message === "string" ? ban.message : "";
+      return Object.assign({}, v && typeof v === "object" ? v : {}, { code, banned: isBanned(ban), banMsg, owner: typeof ownerMap[code] === "string" ? ownerMap[code] : "" });
+    });
     loaded = true;
     loadError = "";
     setConn(true);
@@ -259,7 +261,7 @@ function setConn(ok) { connOk = ok; renderConn(); }
 function decorate(r, now) {
   const ls = Number(r.lastSeen) || 0;
   const online = ls > 0 && Math.abs(now - ls) <= ONLINE_MS;
-  return { r, code: r.code, name: deviceName(r), owner: r.owner || "", ls, online, banned: !!r.banned };
+  return { r, code: r.code, name: deviceName(r), owner: r.owner || "", ls, online, banned: !!r.banned, banMsg: r.banMsg || "" };
 }
 
 function matchesQuery(d) {
@@ -281,6 +283,10 @@ function cardHtml(d, now) {
     ? '<span class="badge online"><span class="dot"></span>Online</span>'
     : '<span>' + h(d.ls ? "Terakhir dilihat " + fmtDate(d.ls, now).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase()) : "Belum pernah terlihat") + '</span>';
   const banned = d.banned ? '<span class="badge banned">Banned</span>' : "";
+  const banMsgChip = d.banned
+    ? '<button class="ban-msg-chip' + (d.banMsg ? '' : ' empty') + '" type="button" data-act="banmsg" data-code="' + h(d.code) + '" aria-label="Edit pesan ban" title="Edit pesan ban">' +
+      ICON_PENCIL + '<span>' + h(d.banMsg || "Tanpa pesan custom") + '</span></button>'
+    : '';
   const btn = d.banned
     ? '<button class="btn ok" type="button" data-act="unban" data-code="' + h(d.code) + '">Unban perangkat</button>'
     : '<button class="btn soft-danger" type="button" data-act="ban" data-code="' + h(d.code) + '">Ban perangkat</button>';
@@ -290,7 +296,9 @@ function cardHtml(d, now) {
       '<button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button></div>' +
       '<div class="code">ID <code>' + h(d.code) + '</code></div>' +
-      '<p class="presence">' + presence + banned + '</p></div>' +
+      '<p class="presence">' + presence + banned + '</p>' +
+      (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p>' : '') +
+    '</div>' +
       ringHtml(r, d.online) +
     '</div>' +
     '<dl class="specs">' +
@@ -519,6 +527,31 @@ function openOwner(code) {
   });
 }
 
+function openBanMsg(code) {
+  const d = findDevice(code);
+  const name = d ? deviceName(d) : code;
+  openModal({
+    title: "Pesan ban",
+    cls: "ok",
+    okText: "Simpan",
+    body:
+      '<p>Pesan ban untuk <strong>' + h(name) + '</strong> (ID <code>' + h(code) + '</code>).</p>' +
+      '<label class="field"><span>Pesan ban</span>' +
+      '<textarea class="input" id="m-msg" rows="3" maxlength="300" placeholder="Kosongkan untuk pakai pesan default">' + h(d ? d.banMsg : "") + '</textarea></label>',
+    onConfirm: async () => {
+      const message = qs("#m-msg").value.trim();
+      await jf(BANS + "/" + encodeURIComponent(code) + ".json", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ banned: true, message })
+      });
+      if (d) d.banMsg = message;
+      render();
+      refresh();
+    }
+  });
+}
+
 function openUnban(code) {
   const d = findDevice(code);
   const name = d ? deviceName(d) : code;
@@ -610,6 +643,7 @@ function showDash() {
     if (!b) return;
     if (b.dataset.act === "owner") openOwner(b.dataset.code);
     else if (b.dataset.act === "ban") openBan(b.dataset.code);
+    else if (b.dataset.act === "banmsg") openBanMsg(b.dataset.code);
     else openUnban(b.dataset.code);
   });
 

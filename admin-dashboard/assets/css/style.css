@@ -179,6 +179,13 @@ textarea.input { resize: vertical; min-height: 84px; }
 .owner-chip:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
 .owner-chip.empty { border: 1.5px dashed var(--border); color: var(--muted); font-weight: 500; }
 .owner-chip.empty:hover { border-color: var(--primary); color: var(--primary); }
+.ban-msg-row { margin: 2px 0 0; }
+.ban-msg-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 230px; padding: 3px 11px; border: 1.5px solid var(--danger-text); border-radius: 999px; background: transparent; color: var(--danger-text); font-size: 12px; font-weight: 600; cursor: pointer; }
+.ban-msg-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ban-msg-chip svg { flex: none; width: 13px; height: 13px; }
+.ban-msg-chip:hover { background: color-mix(in srgb, var(--danger-text) 12%, transparent); }
+.ban-msg-chip.empty { border: 1.5px dashed var(--border); color: var(--muted); font-weight: 500; }
+.ban-msg-chip.empty:hover { border-color: var(--danger-text); color: var(--danger-text); }
 .code { margin-top: 2px; color: var(--muted); font-size: 13px; }
 .code code { color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
 .badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex: none; }
