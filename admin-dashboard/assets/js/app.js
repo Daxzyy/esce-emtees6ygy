@@ -323,8 +323,8 @@ function cardHtml(d, now) {
       '<div class="ident"><div class="name-row"><h3 class="name">' + h(d.name) + '</h3>' +
       '<button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button></div>' +
-      '<div class="code">ID <code>' + h(d.code) + '</code>' +
-      '<button class="copy-btn" type="button" data-act="copy" data-code="' + h(d.code) + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></div>' +
+      '<div class="code">ID <span class="id-chip"><code>' + h(d.code) + '</code>' +
+      '<button class="copy-btn" type="button" data-act="copy" data-code="' + h(d.code) + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></span></div>' +
       '<p class="presence">' + presence + banned + '</p>' +
       (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p>' : '') +
     '</div>' +

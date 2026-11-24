@@ -330,12 +330,17 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
   .list.grid2 .card-foot .btn { min-height: 42px; font-size: 13px; border-radius: 12px; }
 }
 
-/* ===== Tombol salin ID (menempel di kanan atas teks ID) ===== */
+/* ===== Tombol salin ID: menyatu dengan chip ID (satu kotak, ikon di ujung kanan) ===== */
+.id-chip {
+  display: inline-flex; align-items: stretch; vertical-align: middle; overflow: hidden;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+}
+.code .id-chip code { background: transparent; border: 0; border-radius: 0; padding: 2px 8px; }
 .copy-btn {
-  display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0;
-  margin-left: 3px; position: relative; top: -4px; vertical-align: middle;
-  border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer;
+  display: grid; place-items: center; width: 28px; padding: 0;
+  border: 0; border-left: 1px solid var(--border); border-radius: 0;
+  background: transparent; color: var(--muted); cursor: pointer;
 }
 .copy-btn svg { width: 14px; height: 14px; }
-.copy-btn:hover { color: var(--text); background: var(--surface-2); }
+.copy-btn:hover { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
 .copy-btn.copied { color: var(--ok); }
