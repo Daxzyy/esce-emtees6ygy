@@ -2602,52 +2602,82 @@ DEV_NET_SYNC_SMALI = r'''.class public final Lcom/sekolah/ujianbrowser/DevNetSyn
 .end method
 
 .method public run()V
-    .locals 5
+    .locals 8
 
+    :loop_start
     iget-object v0, p0, Lcom/sekolah/ujianbrowser/DevNetSync;->activity:Lcom/sekolah/ujianbrowser/ExamActivity;
 
+    invoke-virtual {v0}, Landroid/app/Activity;->isFinishing()Z
+
+    move-result v1
+
+    if-eqz v1, :dev_sync_alive
+
+    return-void
+
+    :dev_sync_alive
     invoke-virtual {v0}, Lcom/sekolah/ujianbrowser/ExamActivity;->computeDeviceCode()Ljava/lang/String;
 
-    move-result-object v1
+    move-result-object v2
 
-    new-instance v2, Landroid/os/Handler;
+    new-instance v3, Landroid/os/Handler;
 
     invoke-static {}, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;
 
-    move-result-object v3
+    move-result-object v4
 
-    invoke-direct {v2, v3}, Landroid/os/Handler;-><init>(Landroid/os/Looper;)V
-
-    new-instance v3, Lcom/sekolah/ujianbrowser/DevToastRunnable;
-
-    invoke-direct {v3, v0}, Lcom/sekolah/ujianbrowser/DevToastRunnable;-><init>(Lcom/sekolah/ujianbrowser/ExamActivity;)V
-
-    invoke-virtual {v2, v3}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
+    invoke-direct {v3, v4}, Landroid/os/Handler;-><init>(Landroid/os/Looper;)V
 
     :try_start_0
-    move-object v3, v0
+    move-object v4, v0
 
-    check-cast v3, Landroid/content/Context;
+    check-cast v4, Landroid/content/Context;
 
-    invoke-static {v3, v1}, Lcom/sekolah/ujianbrowser/DevNet;->pushSpecs(Landroid/content/Context;Ljava/lang/String;)V
+    invoke-static {v4, v2}, Lcom/sekolah/ujianbrowser/DevNet;->pushSpecs(Landroid/content/Context;Ljava/lang/String;)V
 
-    invoke-static {v1}, Lcom/sekolah/ujianbrowser/DevNet;->checkBan(Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v2}, Lcom/sekolah/ujianbrowser/DevNet;->checkBan(Ljava/lang/String;)Ljava/lang/String;
 
-    move-result-object v3
+    move-result-object v4
 
-    if-eqz v3, :sync_done
+    if-eqz v4, :dev_sync_unbanned
 
-    new-instance v4, Lcom/sekolah/ujianbrowser/DevBanRunnable;
+    new-instance v5, Lcom/sekolah/ujianbrowser/DevBanRunnable;
 
-    invoke-direct {v4, v0, v3}, Lcom/sekolah/ujianbrowser/DevBanRunnable;-><init>(Lcom/sekolah/ujianbrowser/ExamActivity;Ljava/lang/String;)V
+    invoke-direct {v5, v0, v4}, Lcom/sekolah/ujianbrowser/DevBanRunnable;-><init>(Lcom/sekolah/ujianbrowser/ExamActivity;Ljava/lang/String;)V
 
-    invoke-virtual {v2, v4}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
+    invoke-virtual {v3, v5}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
 
-    :sync_done
+    goto :dev_sync_checked
+
+    :dev_sync_unbanned
+    new-instance v5, Lcom/sekolah/ujianbrowser/DevUnbanRunnable;
+
+    invoke-direct {v5, v0}, Lcom/sekolah/ujianbrowser/DevUnbanRunnable;-><init>(Lcom/sekolah/ujianbrowser/ExamActivity;)V
+
+    invoke-virtual {v3, v5}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
+
+    :dev_sync_checked
     :try_end_0
-    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :dev_sync_caught
 
-    :catch_0
+    goto :dev_sync_sleep
+
+    :dev_sync_caught
+    move-exception v4
+
+    :dev_sync_sleep
+    :try_start_1
+    const-wide/16 v6, 0xbb8
+
+    invoke-static {v6, v7}, Ljava/lang/Thread;->sleep(J)V
+    :try_end_1
+    .catch Ljava/lang/InterruptedException; {:try_start_1 .. :try_end_1} :dev_sync_interrupted
+
+    goto :loop_start
+
+    :dev_sync_interrupted
+    move-exception v6
+
     return-void
 .end method
 '''
@@ -2684,6 +2714,37 @@ DEV_BAN_RUNNABLE_SMALI = r'''.class public final Lcom/sekolah/ujianbrowser/DevBa
     iget-object v1, p0, Lcom/sekolah/ujianbrowser/DevBanRunnable;->message:Ljava/lang/String;
 
     invoke-virtual {v0, v1}, Lcom/sekolah/ujianbrowser/ExamActivity;->showBanScreen(Ljava/lang/String;)V
+
+    return-void
+.end method
+'''
+
+DEV_UNBAN_RUNNABLE_SMALI = r'''.class public final Lcom/sekolah/ujianbrowser/DevUnbanRunnable;
+.super Ljava/lang/Object;
+.source "DevUnbanRunnable.kt"
+
+.implements Ljava/lang/Runnable;
+
+
+.field private final activity:Lcom/sekolah/ujianbrowser/ExamActivity;
+
+
+.method public constructor <init>(Lcom/sekolah/ujianbrowser/ExamActivity;)V
+    .locals 0
+
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    iput-object p1, p0, Lcom/sekolah/ujianbrowser/DevUnbanRunnable;->activity:Lcom/sekolah/ujianbrowser/ExamActivity;
+
+    return-void
+.end method
+
+.method public run()V
+    .locals 1
+
+    iget-object v0, p0, Lcom/sekolah/ujianbrowser/DevUnbanRunnable;->activity:Lcom/sekolah/ujianbrowser/ExamActivity;
+
+    invoke-virtual {v0}, Lcom/sekolah/ujianbrowser/ExamActivity;->hideBanScreen()V
 
     return-void
 .end method
@@ -2812,8 +2873,8 @@ write_file(os.path.join(ROOT, PKG + "DevNetSync.smali"), DEV_NET_SYNC_SMALI,
            "DevNetSync.smali (background: specs PATCH + ban check)")
 write_file(os.path.join(ROOT, PKG + "DevBanRunnable.smali"), DEV_BAN_RUNNABLE_SMALI,
            "DevBanRunnable.smali (carries custom ban message)")
-write_file(os.path.join(ROOT, PKG + "DevToastRunnable.smali"), DEV_TOAST_RUNNABLE_SMALI,
-           "DevToastRunnable.smali (tells the user specs are sent to Firebase)")
+write_file(os.path.join(ROOT, PKG + "DevUnbanRunnable.smali"), DEV_UNBAN_RUNNABLE_SMALI,
+           "DevUnbanRunnable.smali (hides the ban screen the moment admin unbans)")
 write_file(os.path.join(ROOT, PKG + "DevExitClick.smali"), DEV_EXIT_CLICK_SMALI,
            "DevExitClick.smali (exit button on ban screen, releases lock task)")
 
@@ -2832,10 +2893,21 @@ ensure_fields(EXAM, [
     ".field private devBanned:Z",
 ], "ExamActivity: add devBanMessage/devBanned fields (TUGAS 2)")
 
+ensure_fields(EXAM, [
+    ".field private banView:Landroid/view/View;",
+], "ExamActivity: add banView field (keeps a handle on the ban overlay so it can be removed on unban)")
+
 SHOW_BAN_SCREEN_SMALI = """\
 .method public final showBanScreen(Ljava/lang/String;)V
     .locals 3
 
+    iget-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
+
+    if-eqz v0, :dev_ban_apply
+
+    return-void
+
+    :dev_ban_apply
     const/4 v1, 0x1
 
     iput-boolean v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
@@ -2849,6 +2921,8 @@ SHOW_BAN_SCREEN_SMALI = """\
 
     invoke-static {p0, v0, v1}, Lcom/sekolah/ujianbrowser/DevNet;->buildBanView(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;)Landroid/view/View;
     move-result-object v0
+
+    iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->banView:Landroid/view/View;
 
     const/4 v1, -0x1
     new-instance v2, Landroid/view/ViewGroup$LayoutParams;
@@ -2865,6 +2939,51 @@ SHOW_BAN_SCREEN_SMALI = """\
 replace_method(EXAM, ".method public final showBanScreen(Ljava/lang/String;)V",
                ".method public final showBanScreen2(Ljava/lang/String;)V",
                SHOW_BAN_SCREEN_SMALI, "ExamActivity.showBanScreen (TUGAS 2)")
+
+ensure_method(EXAM, ".method public final hideBanScreen()V", '''\
+.method public final hideBanScreen()V
+    .locals 4
+
+    iget-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
+
+    if-nez v0, :dev_unban_go
+
+    return-void
+
+    :dev_unban_go
+    const/4 v0, 0x0
+
+    iput-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
+    iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanMessage:Ljava/lang/String;
+
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->banView:Landroid/view/View;
+
+    if-eqz v1, :dev_unban_noview
+
+    invoke-virtual {v1}, Landroid/view/View;->getParent()Landroid/view/ViewParent;
+    move-result-object v2
+
+    instance-of v3, v2, Landroid/view/ViewGroup;
+
+    if-eqz v3, :dev_unban_rm
+
+    check-cast v2, Landroid/view/ViewGroup;
+    invoke-virtual {v2, v1}, Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V
+
+    :dev_unban_rm
+    iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->banView:Landroid/view/View;
+
+    :dev_unban_noview
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->webView:Landroid/webkit/WebView;
+
+    if-eqz v1, :dev_unban_nowv
+
+    invoke-virtual {v1, v0}, Landroid/webkit/WebView;->setVisibility(I)V
+
+    :dev_unban_nowv
+    return-void
+.end method
+''', "ExamActivity.hideBanScreen (restores exam view the moment admin unbans, used by DevUnbanRunnable)")
 
 
 # --------------------------------------------------------------------------

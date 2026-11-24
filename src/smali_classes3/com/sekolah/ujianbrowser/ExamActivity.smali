@@ -128,6 +128,8 @@
 .field public devBanMessage:Ljava/lang/String;
 .field private devBanned:Z
 
+.field private banView:Landroid/view/View;
+
 # direct methods
 .method public constructor <init>()V
     .locals 2
@@ -3374,6 +3376,13 @@
 .method public final showBanScreen(Ljava/lang/String;)V
     .locals 3
 
+    iget-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
+
+    if-eqz v0, :dev_ban_apply
+
+    return-void
+
+    :dev_ban_apply
     const/4 v1, 0x1
 
     iput-boolean v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
@@ -3388,6 +3397,8 @@
     invoke-static {p0, v0, v1}, Lcom/sekolah/ujianbrowser/DevNet;->buildBanView(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;)Landroid/view/View;
     move-result-object v0
 
+    iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->banView:Landroid/view/View;
+
     const/4 v1, -0x1
     new-instance v2, Landroid/view/ViewGroup$LayoutParams;
     invoke-direct {v2, v1, v1}, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V
@@ -3397,5 +3408,48 @@
     const/4 v2, 0x4
     invoke-virtual {v1, v2}, Landroid/webkit/WebView;->setVisibility(I)V
     :ban_no_webview
+    return-void
+.end method
+
+.method public final hideBanScreen()V
+    .locals 4
+
+    iget-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
+
+    if-nez v0, :dev_unban_go
+
+    return-void
+
+    :dev_unban_go
+    const/4 v0, 0x0
+
+    iput-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
+    iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanMessage:Ljava/lang/String;
+
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->banView:Landroid/view/View;
+
+    if-eqz v1, :dev_unban_noview
+
+    invoke-virtual {v1}, Landroid/view/View;->getParent()Landroid/view/ViewParent;
+    move-result-object v2
+
+    instance-of v3, v2, Landroid/view/ViewGroup;
+
+    if-eqz v3, :dev_unban_rm
+
+    check-cast v2, Landroid/view/ViewGroup;
+    invoke-virtual {v2, v1}, Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V
+
+    :dev_unban_rm
+    iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->banView:Landroid/view/View;
+
+    :dev_unban_noview
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->webView:Landroid/webkit/WebView;
+
+    if-eqz v1, :dev_unban_nowv
+
+    invoke-virtual {v1, v0}, Landroid/webkit/WebView;->setVisibility(I)V
+
+    :dev_unban_nowv
     return-void
 .end method
