@@ -121,6 +121,8 @@
 
 .field private devLastTap:J
 
+    .field private devTapCount:I
+
 # direct methods
 .method public constructor <init>()V
     .locals 2
@@ -2875,25 +2877,41 @@
 
     if-lez v1, :dev_tap_store
 
+    sub-long v6, v2, v4
+
+    const-wide/16 v4, 0xfa
+
+    cmp-long v1, v6, v4
+
+    if-gtz v1, :dev_tap_store
+
     goto :dev_tap_have_last
 
     :dev_tap_store
-    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+    const/4 v1, 0x1
 
-    move-result-wide v2
+    iput v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devTapCount:I
 
     iput-wide v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devLastTap:J
 
     goto :dev_tap_done
 
     :dev_tap_have_last
-    sub-long/2addr v2, v4
+    iget v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devTapCount:I
 
-    const-wide/16 v6, 0x12c
+    add-int/lit8 v1, v1, 0x1
 
-    cmp-long v1, v2, v6
+    iput v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devTapCount:I
 
-    if-gtz v1, :dev_tap_store
+    iput-wide v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devLastTap:J
+
+    const/4 v4, 0x3
+
+    if-lt v1, v4, :dev_tap_done
+
+    const/4 v4, 0x0
+
+    iput v4, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devTapCount:I
 
     const-wide/16 v4, 0x0
 
@@ -2903,7 +2921,7 @@
 
     move-result-wide v2
 
-    const-wide/16 v4, 0x2bc
+    const-wide/16 v4, 0x5dc
 
     add-long/2addr v2, v4
 
