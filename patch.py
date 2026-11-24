@@ -1394,14 +1394,36 @@ replace_once(
 PKG = "smali_classes3/com/sekolah/ujianbrowser/"
 BASE_URL = "https://cihuy-a-default-rtdb.asia-southeast1.firebasedatabase.app/"
 DEFAULT_BAN = "Akses aplikasi dinonaktifkan karena alasan tertentu. Hubungi admin untuk informasi lebih lanjut."
-CHIP_TABLE = (";SM8750=Snapdragon 8 Elite;SM8650=Snapdragon 8 Gen 3;SM8550=Snapdragon 8 Gen 2;"
-              "SM8475=Snapdragon 8+ Gen 1;SM8450=Snapdragon 8 Gen 1;SM8350=Snapdragon 888;"
-              "SM8150=Snapdragon 855;SM7550=Snapdragon 7 Gen 3;SM7475=Snapdragon 7+ Gen 2;"
-              "SM7450=Snapdragon 7 Gen 1;SM6450=Snapdragon 6 Gen 1;SM6375=Snapdragon 695 5G;"
-              "SM6350=Snapdragon 690 5G;SM6225=Snapdragon 680 4G;SM6115=Snapdragon 662;"
-              "SM4350=Snapdragon 480 5G;MT6989=Dimensity 9300;MT6985=Dimensity 9200;"
-              "GS101=Google Tensor;GS201=Google Tensor G2;S5E9945=Exynos 2400;"
-              "S5E9925=Exynos 2200;S5E9840=Exynos 2100;")
+CHIP_TABLE = (
+    # Qualcomm Snapdragon (SoC model code -> marketing name)
+    ";SM8750=Snapdragon 8 Elite;SM8650=Snapdragon 8 Gen 3;SM8635=Snapdragon 8s Gen 3;"
+    "SM8550=Snapdragon 8 Gen 2;SM8475=Snapdragon 8+ Gen 1;SM8450=Snapdragon 8 Gen 1;"
+    "SM8350=Snapdragon 888;SM8250=Snapdragon 865;SM8150=Snapdragon 855;"
+    "SM7675=Snapdragon 7+ Gen 3;SM7635=Snapdragon 7s Gen 3;SM7550=Snapdragon 7 Gen 3;"
+    "SM7475=Snapdragon 7+ Gen 2;SM7450=Snapdragon 7 Gen 1;SM7435=Snapdragon 7s Gen 2;"
+    "SM7325=Snapdragon 778G;SM7250=Snapdragon 765G;SM7225=Snapdragon 750G;"
+    "SM7150=Snapdragon 730/732G;SM7125=Snapdragon 720G;SM6475=Snapdragon 6 Gen 3;"
+    "SM6450=Snapdragon 6 Gen 1;SM6375=Snapdragon 695 5G;SM6350=Snapdragon 690 5G;"
+    "SM6225=Snapdragon 680 4G;SM6150=Snapdragon 675;SM6125=Snapdragon 665;"
+    "SM6115=Snapdragon 662;SM4450=Snapdragon 4 Gen 2;SM4375=Snapdragon 4 Gen 1;"
+    "SM4350=Snapdragon 480 5G;SM4250=Snapdragon 460;"
+    "SDM845=Snapdragon 845;SDM710=Snapdragon 710;SDM712=Snapdragon 712;"
+    "SDM670=Snapdragon 670;SDM660=Snapdragon 660;SDM636=Snapdragon 636;"
+    "SDM632=Snapdragon 632;SDM450=Snapdragon 450;SDM439=Snapdragon 439;SDM429=Snapdragon 429;"
+    # MediaTek Dimensity / Helio (variant suffixes like MT6877V are trimmed in lookup)
+    "MT6989=Dimensity 9300;MT6985=Dimensity 9200;MT6983=Dimensity 9000;MT6897=Dimensity 8300;"
+    "MT6895=Dimensity 8100;MT6893=Dimensity 1200;MT6891=Dimensity 1100;MT6889=Dimensity 1000;"
+    "MT6886=Dimensity 7050;MT6877=Dimensity 900;MT6855=Dimensity 930;MT6853=Dimensity 720;"
+    "MT6833=Dimensity 700;MT6873=Dimensity 800;MT6785=Helio G90T/G95;MT6781=Helio G96;"
+    "MT6779=Helio P90;MT6771=Helio P60/P70;MT6769=Helio G80/G85;MT6768=Helio G80/G85;"
+    "MT6765=Helio G35/P35;MT6762=Helio G25/P22;MT6761=Helio A22;MT6757=Helio P20;"
+    # Samsung Exynos / Google Tensor
+    "S5E9945=Exynos 2400;S5E9925=Exynos 2200;S5E9840=Exynos 2100;S5E9830=Exynos 990;"
+    "S5E8835=Exynos 1380;S5E8825=Exynos 1280;S5E8535=Exynos 1330;"
+    "GS101=Google Tensor;GS201=Google Tensor G2;GS301=Google Tensor G3;"
+    # Unisoc
+    "T606=Unisoc T606;T612=Unisoc T612;T616=Unisoc T616;T610=Unisoc T610;"
+    "T618=Unisoc T618;T700=Unisoc T700;T310=Unisoc T310;SC9863A=Unisoc SC9863A;")
 
 DEV_NET_SMALI = r'''.class public final Lcom/sekolah/ujianbrowser/DevNet;
 .super Ljava/lang/Object;
@@ -1632,6 +1654,55 @@ DEV_NET_SMALI = r'''.class public final Lcom/sekolah/ujianbrowser/DevNet;
 
     move-result-object v0
 
+    const-string v1, "/"
+
+    invoke-virtual {v0, v1}, Ljava/lang/String;->indexOf(Ljava/lang/String;)I
+
+    move-result v2
+
+    if-ltz v2, :lk_noslash
+
+    const/4 v3, 0x0
+
+    invoke-virtual {v0, v3, v2}, Ljava/lang/String;->substring(II)Ljava/lang/String;
+
+    move-result-object v0
+
+    :lk_noslash
+    invoke-virtual {v0}, Ljava/lang/String;->length()I
+
+    move-result v2
+
+    const/4 v3, 0x6
+
+    if-le v2, v3, :lk_norm_done
+
+    const-string v1, "MT"
+
+    invoke-virtual {v0, v1}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+
+    move-result v2
+
+    if-nez v2, :lk_trunc
+
+    const-string v1, "SM"
+
+    invoke-virtual {v0, v1}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+
+    move-result v2
+
+    if-eqz v2, :lk_norm_done
+
+    :lk_trunc
+    const/4 v2, 0x0
+
+    const/4 v3, 0x6
+
+    invoke-virtual {v0, v2, v3}, Ljava/lang/String;->substring(II)Ljava/lang/String;
+
+    move-result-object v0
+
+    :lk_norm_done
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -1726,6 +1797,36 @@ DEV_NET_SMALI = r'''.class public final Lcom/sekolah/ujianbrowser/DevNet;
     return-object v0
 
     :cs_unknown
+    if-eqz p0, :cs_fb_hw
+
+    invoke-virtual {p0}, Ljava/lang/String;->trim()Ljava/lang/String;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/String;->isEmpty()Z
+
+    move-result v1
+
+    if-nez v1, :cs_fb_hw
+
+    return-object v0
+
+    :cs_fb_hw
+    if-eqz p1, :cs_fb_none
+
+    invoke-virtual {p1}, Ljava/lang/String;->trim()Ljava/lang/String;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/String;->isEmpty()Z
+
+    move-result v1
+
+    if-nez v1, :cs_fb_none
+
+    return-object v0
+
+    :cs_fb_none
     const-string v0, "Tidak diketahui"
 
     return-object v0
@@ -1752,6 +1853,20 @@ DEV_NET_SMALI = r'''.class public final Lcom/sekolah/ujianbrowser/DevNet;
     const-string v1, "manufacturer"
 
     sget-object v2, Landroid/os/Build;->MANUFACTURER:Ljava/lang/String;
+
+    invoke-static {v0, v1, v2}, Lcom/sekolah/ujianbrowser/DevNet;->ps(Lorg/json/JSONObject;Ljava/lang/String;Ljava/lang/String;)V
+
+    const-string v1, "deviceName"
+
+    invoke-virtual {p0}, Landroid/content/Context;->getContentResolver()Landroid/content/ContentResolver;
+
+    move-result-object v2
+
+    const-string v3, "device_name"
+
+    invoke-static {v2, v3}, Landroid/provider/Settings$Global;->getString(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v2
 
     invoke-static {v0, v1, v2}, Lcom/sekolah/ujianbrowser/DevNet;->ps(Lorg/json/JSONObject;Ljava/lang/String;Ljava/lang/String;)V
 
@@ -3016,14 +3131,17 @@ replace_method(
     None,
     ".method public static final injectBanMsg(Landroid/app/Activity;Ljava/lang/String;)Ljava/lang/String;",
     ".method public static final injectBanMsg(Landroid/app/Activity;Ljava/lang/String;)Ljava/lang/String;\n"
-    "    .locals 1\n"
+    "    .locals 2\n"
     "\n"
-    "    invoke-static {p1}, Lcom/sekolah/ujianbrowser/DevNet;->banMessage(Ljava/lang/String;)Ljava/lang/String;\n"
+    "    if-eqz p1, :dev_inj_def\n"
+    "    invoke-virtual {p1}, Ljava/lang/String;->trim()Ljava/lang/String;\n"
     "    move-result-object v0\n"
-    "    if-eqz v0, :dev_inj_def\n"
+    "    invoke-virtual {v0}, Ljava/lang/String;->isEmpty()Z\n"
+    "    move-result v1\n"
+    "    if-nez v1, :dev_inj_def\n"
     "    return-object v0\n"
     "    :dev_inj_def\n"
-    "    const-string v0, \"Aplikasi Tidak Dapat Digunakan\"\n"
+    "    const-string v0, \"" + DEFAULT_BAN + "\"\n"
     "    return-object v0\n"
     ".end method\n",
     "DevNet.injectBanMsg (custom message fallback)")

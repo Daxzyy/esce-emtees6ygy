@@ -5,7 +5,7 @@ Static dashboard untuk melihat device via Firebase RTDB.
 Vercel, Root Directory = `admin-dashboard/` (repo publik).
 
 ## Fitur
-- List devices (Kode, Kode Device, First/Last Seen, Chipset, SDK, Status)
+- List devices (ID Device, Nama Device, First/Last Seen, Chipset, SDK, Status)
 - Tombol Ban / Unban per device (tulis ke `/banned/{kode}` di Firebase RTDB)
 
 ## Catatan

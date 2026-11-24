@@ -24,6 +24,33 @@ async function jf(u, opts) {
   return r.json();
 }
 
+function valid(v) {
+  return v !== undefined && v !== null && String(v).trim() !== "" && String(v).trim() !== "Tidak diketahui";
+}
+
+// Nama device lengkap: "Samsung SM-A135F" (+ nama bawaan HP kalau ada, mis. "Galaxy A13")
+function deviceName(r) {
+  let maker = valid(r.manufacturer) ? String(r.manufacturer).trim() : "";
+  const model = valid(r.model) ? String(r.model).trim() : "";
+  if (maker) maker = maker.charAt(0).toUpperCase() + maker.slice(1);
+  let name = model;
+  if (maker && !model.toLowerCase().startsWith(maker.toLowerCase())) name = (maker + " " + model).trim();
+  if (!name) name = "-";
+  if (valid(r.deviceName) && String(r.deviceName).trim().toLowerCase() !== model.toLowerCase() &&
+      !name.toLowerCase().includes(String(r.deviceName).trim().toLowerCase())) {
+    name += " (" + String(r.deviceName).trim() + ")";
+  }
+  return name;
+}
+
+// Chipset: pakai hasil dari app; kalau "Tidak diketahui" jatuh ke socModel / hardware mentah
+function chipsetName(r) {
+  if (valid(r.chipset)) return r.chipset;
+  if (valid(r.socModel)) return r.socModel;
+  if (valid(r.hardware)) return r.hardware;
+  return "-";
+}
+
 function isBanned(v) {
   if (v === true) return true;
   return !!v && typeof v === "object" && v.banned === true;
@@ -45,9 +72,9 @@ function renderTable(rows) {
     const act = r.banned
       ? '<button class="act unban" data-act="unban" data-code="' + esc(r.code) + '">Unban</button>'
       : '<button class="act ban" data-act="ban" data-code="' + esc(r.code) + '">Ban</button>';
-    return "<tr><td>" + esc(r.code) + "</td><td>" + esc(r.device_code || r.code) + "</td><td>" + esc(fmtDate(r.firstSeen)) + "</td><td>" + esc(fmtDate(r.lastSeen)) + "</td><td>" + esc(r.chipset) + "</td><td>" + esc(abis) + "</td><td>" + sdk + "</td><td>" + status + "</td><td>" + act + "</td></tr>";
+    return "<tr><td>" + esc(r.code) + "</td><td>" + esc(deviceName(r)) + "</td><td>" + esc(fmtDate(r.firstSeen)) + "</td><td>" + esc(fmtDate(r.lastSeen)) + "</td><td>" + esc(chipsetName(r)) + "</td><td>" + esc(abis) + "</td><td>" + sdk + "</td><td>" + status + "</td><td>" + act + "</td></tr>";
   }).join("");
-  box.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Kode</th><th>Kode Device</th><th>First Seen</th><th>Last Seen</th><th>Chipset</th><th>Hardware</th><th>SDK</th><th>Status</th><th>Aksi</th></tr></thead><tbody>' + body + "</tbody></table></div>";
+  box.innerHTML = '<div class="table-wrap"><table><thead><tr><th>ID Device</th><th>Nama Device</th><th>First Seen</th><th>Last Seen</th><th>Chipset</th><th>Hardware</th><th>SDK</th><th>Status</th><th>Aksi</th></tr></thead><tbody>' + body + "</tbody></table></div>";
 }
 
 async function load() {
