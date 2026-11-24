@@ -172,6 +172,11 @@ textarea.input { resize: vertical; min-height: 84px; }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .ident { min-width: 0; }
 .name { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
+.name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.owner-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 160px; padding: 3px 9px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.owner-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owner-chip svg { flex: none; width: 13px; height: 13px; }
+.owner-chip.empty { color: var(--muted); font-weight: 500; }
 .code { margin-top: 2px; color: var(--muted); font-size: 13px; }
 .code code { color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
 .badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex: none; }

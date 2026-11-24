@@ -21,6 +21,7 @@ document.addEventListener("animationend", function (e) {
 const ROOT = "https://cihuy-a-default-rtdb.asia-southeast1.firebasedatabase.app";
 const BASE = ROOT + "/devices";
 const BANS = ROOT + "/banned";
+const OWNERS = ROOT + "/owners";
 const PASSWORD = "banned";
 const AUTH_HEADER = "Basic YWRtaW46YWRtaW4=";
 
@@ -221,11 +222,12 @@ async function refresh() {
   const my = session;
   inflight = true;
   try {
-    const [devs, bans] = await Promise.all([jf(BASE + ".json"), jf(BANS + ".json")]);
+    const [devs, bans, owners] = await Promise.all([jf(BASE + ".json"), jf(BANS + ".json"), jf(OWNERS + ".json").catch(() => ({}))]);
     if (my !== session) return;
+    const ownerMap = owners && typeof owners === "object" ? owners : {};
     const banMap = bans && typeof bans === "object" ? bans : {};
     devices = Object.entries(devs || {}).map(([code, v]) =>
-      Object.assign({}, v && typeof v === "object" ? v : {}, { code, banned: isBanned(banMap[code]) })
+      Object.assign({}, v && typeof v === "object" ? v : {}, { code, banned: isBanned(banMap[code]), owner: typeof ownerMap[code] === "string" ? ownerMap[code] : "" })
     );
     loaded = true;
     loadError = "";
@@ -257,12 +259,12 @@ function setConn(ok) { connOk = ok; renderConn(); }
 function decorate(r, now) {
   const ls = Number(r.lastSeen) || 0;
   const online = ls > 0 && Math.abs(now - ls) <= ONLINE_MS;
-  return { r, code: r.code, name: deviceName(r), ls, online, banned: !!r.banned };
+  return { r, code: r.code, name: deviceName(r), owner: r.owner || "", ls, online, banned: !!r.banned };
 }
 
 function matchesQuery(d) {
   if (!query) return true;
-  const hay = [d.name, d.code, d.r.model, d.r.manufacturer, chipsetName(d.r)].join(" ").toLowerCase();
+  const hay = [d.name, d.owner, d.code, d.r.model, d.r.manufacturer, chipsetName(d.r)].join(" ").toLowerCase();
   return hay.indexOf(query) !== -1;
 }
 
@@ -284,7 +286,9 @@ function cardHtml(d, now) {
     : '<button class="btn soft-danger" type="button" data-act="ban" data-code="' + h(d.code) + '">Ban perangkat</button>';
   return (
     '<div class="card-head">' +
-      '<div class="ident"><h3 class="name">' + h(d.name) + '</h3>' +
+      '<div class="ident"><div class="name-row"><h3 class="name">' + h(d.name) + '</h3>' +
+      '<button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
+      ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button></div>' +
       '<div class="code">ID <code>' + h(d.code) + '</code></div>' +
       '<p class="presence">' + presence + banned + '</p></div>' +
       ringHtml(r, d.online) +
@@ -489,6 +493,32 @@ function openBan(code) {
   });
 }
 
+function openOwner(code) {
+  const d = findDevice(code);
+  const name = d ? deviceName(d) : code;
+  openModal({
+    title: "Label pemilik",
+    cls: "ok",
+    okText: "Simpan",
+    body:
+      '<p>Label untuk <strong>' + h(name) + '</strong> (ID <code>' + h(code) + '</code>).</p>' +
+      '<label class="field"><span>Nama pemilik</span>' +
+      '<input class="input" id="m-msg" type="text" maxlength="40" value="' + h(d ? d.owner : "") + '" placeholder="Kosongkan untuk hapus label"></label>',
+    onConfirm: async () => {
+      const label = qs("#m-msg").value.trim().slice(0, 40);
+      const url = OWNERS + "/" + encodeURIComponent(code) + ".json";
+      if (label) {
+        await jf(url, { method: "PUT", headers: { "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify(label) });
+      } else {
+        await jf(url, { method: "DELETE" });
+      }
+      if (d) d.owner = label;
+      render();
+      refresh();
+    }
+  });
+}
+
 function openUnban(code) {
   const d = findDevice(code);
   const name = d ? deviceName(d) : code;
@@ -515,6 +545,7 @@ function toggleTheme() {
 }
 
 /* ===================== Screens ===================== */
+const ICON_PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
 const ICON_SHIELD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8.2-8 9-4.8-.8-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>';
 const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
 const ICON_SUN = '<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
@@ -577,7 +608,9 @@ function showDash() {
   qs("#list").addEventListener("click", e => {
     const b = e.target.closest("button[data-act]");
     if (!b) return;
-    if (b.dataset.act === "ban") openBan(b.dataset.code); else openUnban(b.dataset.code);
+    if (b.dataset.act === "owner") openOwner(b.dataset.code);
+    else if (b.dataset.act === "ban") openBan(b.dataset.code);
+    else openUnban(b.dataset.code);
   });
 
   render();
