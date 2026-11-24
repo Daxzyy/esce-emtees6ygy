@@ -1,6 +1,9 @@
 (function () {
 "use strict";
 
+// iOS Safari baru memicu :active kalau ada listener sentuhan di dokumen
+document.addEventListener("touchstart", function () {}, { passive: true });
+
 /* ===================== Config ===================== */
 const ROOT = "https://cihuy-a-default-rtdb.asia-southeast1.firebasedatabase.app";
 const BASE = ROOT + "/devices";
