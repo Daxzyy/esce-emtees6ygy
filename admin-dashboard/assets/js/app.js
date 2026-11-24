@@ -1,5 +1,7 @@
-const BASE = "https://cihuy-a-default-rtdb.asia-southeast1.firebasedatabase.app/devices";
-const PASSWORD = "GANTI_PASSWORD_INI";
+const ROOT = "https://cihuy-a-default-rtdb.asia-southeast1.firebasedatabase.app";
+const BASE = ROOT + "/devices";
+const BANS = ROOT + "/banned";
+const PASSWORD = "banned";
 const AUTH_HEADER = "Basic YWRtaW46YWRtaW4=";
 
 function qs(sel) { return document.querySelector(sel); }
@@ -22,6 +24,11 @@ async function jf(u, opts) {
   return r.json();
 }
 
+function isBanned(v) {
+  if (v === true) return true;
+  return !!v && typeof v === "object" && v.banned === true;
+}
+
 function renderTable(rows) {
   const box = qs("#t");
   if (!rows.length) {
@@ -32,17 +39,26 @@ function renderTable(rows) {
   const body = rows.map(r => {
     const abis = Array.isArray(r.supportedAbis) ? r.supportedAbis.slice(0, 2).join(", ") : "-";
     const sdk = esc(r.androidVersion) + " (" + esc(r.sdkInt || r.sdk) + ")";
-    return "<tr><td>" + esc(r.code) + "</td><td>" + esc(r.device_code || r.code) + "</td><td>" + esc(fmtDate(r.firstSeen)) + "</td><td>" + esc(fmtDate(r.lastSeen)) + "</td><td>" + esc(r.chipset) + "</td><td>" + esc(abis) + "</td><td>" + sdk + '</td><td><button class="lancen" data-code="' + esc(r.code) + '">Lancen</button></td></tr>';
+    const status = r.banned
+      ? '<span class="badge banned">Banned</span>'
+      : '<span class="badge unbanned">Unbanned</span>';
+    const act = r.banned
+      ? '<button class="act unban" data-act="unban" data-code="' + esc(r.code) + '">Unban</button>'
+      : '<button class="act ban" data-act="ban" data-code="' + esc(r.code) + '">Ban</button>';
+    return "<tr><td>" + esc(r.code) + "</td><td>" + esc(r.device_code || r.code) + "</td><td>" + esc(fmtDate(r.firstSeen)) + "</td><td>" + esc(fmtDate(r.lastSeen)) + "</td><td>" + esc(r.chipset) + "</td><td>" + esc(abis) + "</td><td>" + sdk + "</td><td>" + status + "</td><td>" + act + "</td></tr>";
   }).join("");
-  box.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Kode</th><th>Kode Device</th><th>First Seen</th><th>Last Seen</th><th>Chipset</th><th>Hardware</th><th>SDK</th><th>Aksi</th></tr></thead><tbody>' + body + "</tbody></table></div>";
+  box.innerHTML = '<div class="table-wrap"><table><thead><tr><th>Kode</th><th>Kode Device</th><th>First Seen</th><th>Last Seen</th><th>Chipset</th><th>Hardware</th><th>SDK</th><th>Status</th><th>Aksi</th></tr></thead><tbody>' + body + "</tbody></table></div>";
 }
 
 async function load() {
   const box = qs("#t");
   box.innerHTML = '<p class="note">Memuat data...</p>';
   try {
-    const data = await jf(BASE + ".json");
-    const rows = Object.entries(data || {}).map(([code, v]) => Object.assign({}, v && typeof v === "object" ? v : {}, { code }));
+    const [devices, bans] = await Promise.all([jf(BASE + ".json"), jf(BANS + ".json")]);
+    const banMap = bans && typeof bans === "object" ? bans : {};
+    const rows = Object.entries(devices || {}).map(([code, v]) =>
+      Object.assign({}, v && typeof v === "object" ? v : {}, { code, banned: isBanned(banMap[code]) })
+    );
     renderTable(rows);
   } catch (e) {
     console.error(e);
@@ -51,22 +67,37 @@ async function load() {
 }
 
 document.addEventListener("click", async e => {
-  const btn = e.target.closest(".lancen");
+  const btn = e.target.closest(".act");
   if (!btn) return;
+  const code = btn.dataset.code;
+  const ban = btn.dataset.act === "ban";
+  let message = "";
+  if (ban) {
+    const m = prompt("Pesan ban untuk " + code + " (kosongkan untuk pesan default):");
+    if (m === null) return;
+    message = m.trim();
+  } else if (!confirm("Unban device " + code + "?")) {
+    return;
+  }
   btn.disabled = true;
   btn.textContent = "Proses...";
+  const url = BANS + "/" + encodeURIComponent(code) + ".json";
   try {
-    await jf(BASE + "/" + encodeURIComponent(btn.dataset.code) + ".json", {
-      method: "POST",
-      headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: "{}"
-    });
-    btn.textContent = "Terkirim";
+    if (ban) {
+      await jf(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({ banned: true, message })
+      });
+    } else {
+      await jf(url, { method: "DELETE" });
+    }
+    await load();
   } catch (err) {
     console.error(err);
     btn.textContent = "Gagal";
+    setTimeout(() => { btn.disabled = false; btn.textContent = ban ? "Ban" : "Unban"; }, 1500);
   }
-  setTimeout(() => { btn.disabled = false; btn.textContent = "Lancen"; }, 1500);
 });
 
 function showDash() {

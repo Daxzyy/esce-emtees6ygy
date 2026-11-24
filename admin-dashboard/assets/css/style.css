@@ -12,6 +12,11 @@ table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { padding: 10px 12px; text-align: left; white-space: nowrap; border-bottom: 1px solid #1f2937; }
 th { background: #121826; color: #9ca3af; font-weight: 600; }
 tr:last-child td { border-bottom: 0; }
-.lancen { padding: 6px 12px; background: #dc2626; }
+.act { padding: 6px 12px; min-width: 76px; }
+.ban { background: #dc2626; }
+.unban { background: #16a34a; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.badge.banned { background: #450a0a; color: #fca5a5; }
+.badge.unbanned { background: #052e16; color: #86efac; }
 .note { color: #9ca3af; }
 .err { color: #f87171; }
