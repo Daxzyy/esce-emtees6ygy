@@ -13,6 +13,7 @@ const THEME_KEY = "ujian_admin_theme";
 const ONLINE_MS = 10000;   // now - lastSeen <= 10 detik => Online
 const REFRESH_MS = 4000;   // ambil data baru tiap 4 detik
 const TZ = "Asia/Jakarta";
+const SESSION_MS = 24 * 60 * 60 * 1000; // sesi login berlaku 1 hari
 
 /* ===================== Helpers ===================== */
 function qs(sel, root) { return (root || document).querySelector(sel); }
@@ -45,7 +46,17 @@ function hashPw(s) {
   for (let i = 0; i < str.length; i++) x = ((x << 5) + x + str.charCodeAt(i)) | 0;
   return "v1-" + (x >>> 0).toString(36);
 }
-function isAuthed() { return store.get(AUTH_KEY) === hashPw(PASSWORD); }
+// Sesi login disimpan di localStorage dan kedaluwarsa setelah 1 hari.
+function saveAuth() { store.set(AUTH_KEY, JSON.stringify({ h: hashPw(PASSWORD), t: Date.now() })); }
+function isAuthed() {
+  const raw = store.get(AUTH_KEY);
+  if (!raw) return false;
+  try {
+    const a = JSON.parse(raw);
+    const age = Date.now() - Number(a.t);
+    return a.h === hashPw(PASSWORD) && age >= 0 && age < SESSION_MS;
+  } catch (e) { return false; }
+}
 
 /* ===================== Waktu ===================== */
 let serverOffset = 0; // server - klien (ms), dari header Date Firebase kalau terbaca
@@ -156,6 +167,7 @@ async function jf(u, opts) {
 
 async function refresh() {
   if (inflight || document.hidden || !qs("#list")) return;
+  if (!isAuthed()) { showLogin(); return; } // sesi 1 hari habis
   const my = session;
   inflight = true;
   try {
@@ -426,6 +438,9 @@ const ICON_SUN = '<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="curre
 const ICON_MOON = '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>';
 const ICON_LOGOUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>';
 
+const ICON_EYE = '<svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICON_EYE_OFF = '<svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.9 17.9A10.9 10.9 0 0112 19C5 19 1 12 1 12a18.5 18.5 0 015.1-5.9M9.9 5.1A10.4 10.4 0 0112 5c7 0 11 7 11 7a18.5 18.5 0 01-2.2 3.2M14.1 14.1a3 3 0 11-4.2-4.2"/><path d="M1 1l22 22"/></svg>';
+
 function stopPolling() {
   clearInterval(pollTimer); clearInterval(tickTimer);
   pollTimer = null; tickTimer = null;
@@ -498,8 +513,11 @@ function showLogin() {
     '<div class="login-wrap"><form class="login-card" id="login" autocomplete="on">' +
       '<div class="brand-mark">' + ICON_SHIELD + '</div>' +
       '<h1>Admin Dashboard</h1><p class="sub">UjianBrowser. Masukkan password untuk melanjutkan.</p>' +
-      '<label class="field"><span>Password</span>' +
-      '<input class="input" id="pw" type="password" autocomplete="current-password" required></label>' +
+      '<label class="field" for="pw"><span>Password</span></label>' +
+      '<div class="pw-wrap">' +
+        '<input class="input" id="pw" type="password" autocomplete="current-password" required>' +
+        '<button class="pw-toggle" type="button" id="pw-toggle" aria-label="Tampilkan password" aria-pressed="false" title="Tampilkan password">' + ICON_EYE + ICON_EYE_OFF + '</button>' +
+      '</div>' +
       '<p class="form-err" id="login-err" hidden>Password salah.</p>' +
       '<button class="btn" type="submit">Masuk</button>' +
     '</form></div>';
@@ -510,8 +528,18 @@ function showLogin() {
       qs("#pw").select();
       return;
     }
-    store.set(AUTH_KEY, hashPw(PASSWORD));
+    saveAuth();
     showDash();
+  });
+  qs("#pw-toggle").addEventListener("click", () => {
+    const pw = qs("#pw");
+    const show = pw.type === "password";
+    pw.type = show ? "text" : "password";
+    const t = qs("#pw-toggle");
+    t.setAttribute("aria-pressed", String(show));
+    t.setAttribute("aria-label", show ? "Sembunyikan password" : "Tampilkan password");
+    t.title = show ? "Sembunyikan password" : "Tampilkan password";
+    pw.focus();
   });
   qs("#pw").focus();
 }

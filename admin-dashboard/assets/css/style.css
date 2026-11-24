@@ -96,6 +96,19 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 .input:focus { outline: 2px solid var(--primary); outline-offset: 0; border-color: transparent; }
 textarea.input { resize: vertical; min-height: 84px; }
 .login-card .btn { width: 100%; padding: 11px 14px; }
+.login-card .field { margin-bottom: 6px; }
+.pw-wrap { position: relative; margin-bottom: 14px; }
+.pw-wrap .input { padding-right: 44px; }
+.pw-toggle {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 36px; display: grid; place-items: center;
+  border: 0; background: transparent; color: var(--muted); border-radius: 8px; cursor: pointer;
+}
+.pw-toggle:hover { color: var(--text); background: var(--surface); }
+.pw-toggle svg { width: 18px; height: 18px; }
+.pw-toggle .eye-off { display: none; }
+.pw-toggle[aria-pressed="true"] .eye { display: none; }
+.pw-toggle[aria-pressed="true"] .eye-off { display: block; }
 .form-err { margin: 0 0 12px; color: var(--danger-text); font-size: 13px; }
 
 /* ===== Topbar ===== */
