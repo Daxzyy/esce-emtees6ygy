@@ -254,23 +254,34 @@ textarea.input { resize: vertical; min-height: 84px; }
 }
 @supports (transition-timing-function: linear(0, 1)) {
   :root {
-    /* respons pegas teredam: lewat target, mantul, lalu diam */
-    --spring: linear(0, .18 4%, .55 9%, .93 16%, 1.12 23%, 1.17 28%, 1.12 34%, 1.03 42%,
-      .97 50%, .955 57%, .975 66%, 1.005 78%, 1.005 88%, 1);
+    /* pegas jelly: lewat target, goyang 2-3 kali, lalu diam */
+    --spring: linear(0, .22 4%, .7 9%, 1.15 15%, 1.32 21%, 1.2 28%, .92 36%, .78 43%,
+      .86 50%, 1.03 58%, 1.1 65%, 1.04 72%, .98 80%, .995 90%, 1);
   }
 }
 button, .btn, .seg button, .pw-toggle {
   touch-action: manipulation;
   scale: 1 1;
-  transition: scale .65s var(--spring), filter .15s, background .15s, color .15s;
+  transition: scale .8s var(--spring), filter .15s, background .15s, color .15s;
 }
 button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .pw-toggle:active {
   /* squish: melebar dan memipih saat ditekan; saat dilepas pegas bikin memanjang (stretch) lalu settle */
-  scale: 1.045 .9;
-  transition-duration: .09s, .15s, .15s, .15s;
+  scale: 1.06 .84;
+  transition-duration: .08s, .15s, .15s, .15s;
   transition-timing-function: ease-out;
 }
 @media (prefers-reduced-motion: reduce) {
   button, .btn, .seg button, .pw-toggle { transition: none; }
   button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .pw-toggle:active { scale: .97 .97; }
 }
+
+/* ===== Feedback tap: flash + ring memudar (kelas .tap-fx dipasang oleh JS) ===== */
+:root { --ring-c: rgba(11, 122, 107, .5); --ring-danger: rgba(179, 38, 30, .45); }
+:root[data-theme="dark"] { --ring-c: rgba(47, 184, 162, .55); --ring-danger: rgba(229, 88, 77, .5); }
+.btn.soft-danger, .btn.danger { --ring-c: var(--ring-danger); }
+@keyframes tapfx {
+  0%   { box-shadow: 0 0 0 0 var(--ring-c); filter: brightness(1.18); }
+  100% { box-shadow: 0 0 0 14px transparent; filter: brightness(1); }
+}
+.tap-fx { animation: tapfx .5s ease-out; }
+@media (prefers-reduced-motion: reduce) { .tap-fx { animation: none; } }

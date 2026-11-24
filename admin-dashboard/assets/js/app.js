@@ -4,6 +4,19 @@
 // iOS Safari baru memicu :active kalau ada listener sentuhan di dokumen
 document.addEventListener("touchstart", function () {}, { passive: true });
 
+// Feedback tap: flash + ring memudar di tombol, getar halus di HP yang mendukung
+document.addEventListener("pointerdown", function (e) {
+  const b = e.target.closest && e.target.closest("button");
+  if (!b || b.disabled) return;
+  b.classList.remove("tap-fx");
+  void b.offsetWidth;
+  b.classList.add("tap-fx");
+  if (e.pointerType === "touch" && navigator.vibrate) { try { navigator.vibrate(10); } catch (err) { /* abaikan */ } }
+}, true);
+document.addEventListener("animationend", function (e) {
+  if (e.animationName === "tapfx") e.target.classList.remove("tap-fx");
+}, true);
+
 /* ===================== Config ===================== */
 const ROOT = "https://cihuy-a-default-rtdb.asia-southeast1.firebasedatabase.app";
 const BASE = ROOT + "/devices";
