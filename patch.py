@@ -1144,5 +1144,325 @@ replace_once(
     "    :dev_tap_done",
     "dispatchTouchEvent() -> 3 consecutive taps (250ms gaps) + 1.5s cooldown for devModeToggle")
 
+# --------------------------------------------------------------------------
+# 9. Device ping + remote ban (Firebase RTDB), transparent: shows a short
+#    device code on the Mode Default gate so the user can tell admin their
+#    code. Background-only, fail-open on any network error.
+# --------------------------------------------------------------------------
+ensure_fields(EXAM, ["    .field private devCode:Ljava/lang/String;"],
+              "ExamActivity -> add devCode field")
+
+ensure_method(EXAM, ".method public final computeDeviceCode()Ljava/lang/String;", '''\
+.method public final computeDeviceCode()Ljava/lang/String;
+    .locals 10
+
+    iget-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devCode:Ljava/lang/String;
+
+    if-eqz v0, :dev_code_compute
+
+    return-object v0
+
+    :dev_code_compute
+    const-string v0, "UNKNOWN"
+
+    :try_start_0
+    invoke-virtual {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->getContentResolver()Landroid/content/ContentResolver;
+
+    move-result-object v1
+
+    const-string v2, "android_id"
+
+    invoke-static {v1, v2}, Landroid/provider/Settings$Secure;->getString(Landroid/content/ContentResolver;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v1
+
+    if-nez v1, :dev_code_have_id
+
+    const-string v1, "unknown"
+
+    :dev_code_have_id
+    const-string v2, "SHA-256"
+
+    invoke-static {v2}, Ljava/security/MessageDigest;->getInstance(Ljava/lang/String;)Ljava/security/MessageDigest;
+
+    move-result-object v2
+
+    invoke-virtual {v1}, Ljava/lang/String;->getBytes()[B
+
+    move-result-object v3
+
+    invoke-virtual {v2, v3}, Ljava/security/MessageDigest;->digest([B)[B
+
+    move-result-object v3
+
+    new-instance v4, Ljava/lang/StringBuilder;
+
+    invoke-direct {v4}, Ljava/lang/StringBuilder;-><init>()V
+
+    const/4 v5, 0x0
+
+    :dev_code_loop
+    const/4 v6, 0x4
+
+    if-ge v5, v6, :dev_code_loop_done
+
+    aget-byte v6, v3, v5
+
+    and-int/lit16 v6, v6, 0xff
+
+    shr-int/lit8 v7, v6, 0x4
+
+    and-int/lit8 v7, v7, 0xf
+
+    const/16 v9, 0xa
+
+    if-ge v7, v9, :dev_code_hi_alpha
+
+    add-int/lit8 v9, v7, 0x30
+
+    goto :dev_code_hi_done
+
+    :dev_code_hi_alpha
+    add-int/lit8 v9, v7, 0x37
+
+    :dev_code_hi_done
+    invoke-virtual {v4, v9}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+
+    and-int/lit8 v7, v6, 0xf
+
+    const/16 v9, 0xa
+
+    if-ge v7, v9, :dev_code_lo_alpha
+
+    add-int/lit8 v9, v7, 0x30
+
+    goto :dev_code_lo_done
+
+    :dev_code_lo_alpha
+    add-int/lit8 v9, v7, 0x37
+
+    :dev_code_lo_done
+    invoke-virtual {v4, v9}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+
+    add-int/lit8 v5, v5, 0x1
+
+    goto :dev_code_loop
+
+    :dev_code_loop_done
+    invoke-virtual {v4}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v0
+    :try_end_0
+    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :dev_code_catch
+
+    goto :dev_code_store
+
+    :dev_code_catch
+    move-exception v1
+
+    const-string v0, "UNKNOWN"
+
+    :dev_code_store
+    iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devCode:Ljava/lang/String;
+
+    return-object v0
+.end method
+''', "ExamActivity.computeDeviceCode (SHA-256(ANDROID_ID), first 4 bytes as hex)")
+
+ensure_method(EXAM, ".method public final showBanScreen()V", '''\
+.method public final showBanScreen()V
+    .locals 8
+
+    new-instance v0, Landroid/widget/LinearLayout;
+
+    move-object v1, p0
+
+    check-cast v1, Landroid/content/Context;
+
+    invoke-direct {v0, v1}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+
+    const/4 v1, 0x1
+
+    invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
+
+    const/16 v2, 0x11
+
+    invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->setGravity(I)V
+
+    const-string v3, "#2A0D0D"
+
+    invoke-static {v3}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
+
+    move-result v3
+
+    invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->setBackgroundColor(I)V
+
+    const/4 v3, 0x0
+
+    invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->setVisibility(I)V
+
+    new-instance v4, Landroid/widget/TextView;
+
+    move-object v5, p0
+
+    check-cast v5, Landroid/content/Context;
+
+    invoke-direct {v4, v5}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
+
+    const-string v5, "Aplikasi ini dinonaktifkan untuk device ini.\\nHubungi admin."
+
+    check-cast v5, Ljava/lang/CharSequence;
+
+    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+
+    const/4 v5, -0x1
+
+    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setTextColor(I)V
+
+    const/high16 v5, 0x41a00000    # 20.0f
+
+    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setTextSize(F)V
+
+    invoke-virtual {v4, v2}, Landroid/widget/TextView;->setGravity(I)V
+
+    move-object v5, v4
+
+    check-cast v5, Landroid/view/View;
+
+    invoke-virtual {v0, v5}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
+
+    move-object v5, v0
+
+    check-cast v5, Landroid/view/View;
+
+    const/4 v7, -0x1
+
+    new-instance v6, Landroid/view/ViewGroup$LayoutParams;
+
+    invoke-direct {v6, v7, v7}, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V
+
+    invoke-virtual {p0, v5, v6}, Lcom/sekolah/ujianbrowser/ExamActivity;->addContentView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+
+    iget-object v6, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->webView:Landroid/webkit/WebView;
+
+    if-eqz v6, :ban_no_webview
+
+    const/4 v7, 0x4
+
+    invoke-virtual {v6, v7}, Landroid/webkit/WebView;->setVisibility(I)V
+
+    :ban_no_webview
+    return-void
+.end method
+''', "ExamActivity.showBanScreen (full-screen block message)")
+
+replace_once(
+    EXAM,
+    "    .line 88\n"
+    "    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->buildGate()V\n"
+    "\n"
+    "    .line 90\n",
+    "    .line 88\n"
+    "    invoke-direct {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->buildGate()V\n"
+    "\n"
+    "    new-instance v0, Ljava/lang/Thread;\n"
+    "\n"
+    "    new-instance v1, Lcom/sekolah/ujianbrowser/DevNetSync;\n"
+    "\n"
+    "    invoke-direct {v1, p0}, Lcom/sekolah/ujianbrowser/DevNetSync;-><init>(Lcom/sekolah/ujianbrowser/ExamActivity;)V\n"
+    "\n"
+    "    invoke-direct {v0, v1}, Ljava/lang/Thread;-><init>(Ljava/lang/Runnable;)V\n"
+    "\n"
+    "    invoke-virtual {v0}, Ljava/lang/Thread;->start()V\n"
+    "\n"
+    "    .line 90\n",
+    "onCreate() -> spawn DevNetSync (device ping + ban check) after buildGate()")
+
+replace_once(
+    EXAM,
+    ".method private final buildGate()V\n"
+    "    .locals 10",
+    ".method private final buildGate()V\n"
+    "    .locals 14",
+    "buildGate() -> bump locals 10 -> 14 for device-code line")
+
+replace_once(
+    EXAM,
+    "    .line 331\n"
+    "    new-instance v3, Landroid/widget/Button;\n"
+    "\n"
+    "    move-object v4, p0\n"
+    "\n"
+    "    check-cast v4, Landroid/content/Context;\n"
+    "\n"
+    "    invoke-direct {v3, v4}, Landroid/widget/Button;-><init>(Landroid/content/Context;)V\n"
+    "\n"
+    "    .line 332\n"
+    "    .local v3, \"btnLock\":Landroid/widget/Button;",
+    "    invoke-virtual {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->computeDeviceCode()Ljava/lang/String;\n"
+    "\n"
+    "    move-result-object v10\n"
+    "\n"
+    "    new-instance v11, Landroid/widget/TextView;\n"
+    "\n"
+    "    move-object v12, p0\n"
+    "\n"
+    "    check-cast v12, Landroid/content/Context;\n"
+    "\n"
+    "    invoke-direct {v11, v12}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V\n"
+    "\n"
+    "    new-instance v12, Ljava/lang/StringBuilder;\n"
+    "\n"
+    "    invoke-direct {v12}, Ljava/lang/StringBuilder;-><init>()V\n"
+    "\n"
+    "    const-string v13, \"Kode device: \"\n"
+    "\n"
+    "    invoke-virtual {v12, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;\n"
+    "\n"
+    "    invoke-virtual {v12, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;\n"
+    "\n"
+    "    invoke-virtual {v12}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;\n"
+    "\n"
+    "    move-result-object v12\n"
+    "\n"
+    "    check-cast v12, Ljava/lang/CharSequence;\n"
+    "\n"
+    "    invoke-virtual {v11, v12}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V\n"
+    "\n"
+    "    const-string v12, \"#6B7280\"\n"
+    "\n"
+    "    invoke-static {v12}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I\n"
+    "\n"
+    "    move-result v12\n"
+    "\n"
+    "    invoke-virtual {v11, v12}, Landroid/widget/TextView;->setTextColor(I)V\n"
+    "\n"
+    "    const/high16 v12, 0x41200000    # 10.0f\n"
+    "\n"
+    "    invoke-virtual {v11, v12}, Landroid/widget/TextView;->setTextSize(F)V\n"
+    "\n"
+    "    const/16 v12, 0x11\n"
+    "\n"
+    "    invoke-virtual {v11, v12}, Landroid/widget/TextView;->setGravity(I)V\n"
+    "\n"
+    "    move-object v12, v11\n"
+    "\n"
+    "    check-cast v12, Landroid/view/View;\n"
+    "\n"
+    "    invoke-virtual {v2, v12}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V\n"
+    "\n"
+    "    .line 331\n"
+    "    new-instance v3, Landroid/widget/Button;\n"
+    "\n"
+    "    move-object v4, p0\n"
+    "\n"
+    "    check-cast v4, Landroid/content/Context;\n"
+    "\n"
+    "    invoke-direct {v3, v4}, Landroid/widget/Button;-><init>(Landroid/content/Context;)V\n"
+    "\n"
+    "    .line 332\n"
+    "    .local v3, \"btnLock\":Landroid/widget/Button;",
+    "buildGate() -> show device code text above the lock/teacher buttons")
+
 print("\n".join(LOG))
 print("TOTAL PATCHES: %d" % len(LOG))
