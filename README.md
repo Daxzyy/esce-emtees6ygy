@@ -11,7 +11,7 @@ src/                          ← source lengkap (hasil decode apktool, sudah di
   resources.arsc, res/        ← resource asli, tidak diubah
   smali*/                     ← kode; ini yang boleh kamu edit
   apktool.yml
-patch.py                      ← 21 patch (semua bergantung mode)
+patch.py                      ← patch Smali (idempoten, jalan lewat apktool src)
 .github/workflows/release.yml ← CI: build → sign → tempel ke Releases
 base/Ujian-MTsN6v3.apk        ← APK asli, cuma buat kalau mau decode versi baru
 ```
@@ -59,8 +59,22 @@ sebentar lalu hilang sendiri (`BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`).
 > (memang perilaku APK asli). Double-tap lagi untuk kembali ke Mode Mod —
 > gerbang dilepas dan soal langsung kelihatan lagi.
 
-Tidak ada kode di aplikasi ini yang mengirim laporan ke server — deteksi
-"keluar aplikasi" cuma tampil di HP murid itu sendiri.
+## Data yang dikirim ke Firebase
+
+Setiap kali aplikasi dibuka, aplikasi mengirim spesifikasi perangkat ke Firebase
+Realtime Database (`/devices/{deviceCode}`) dan menampilkan Toast pemberitahuan.
+Data yang dikirim: kode perangkat (hash dari ANDROID_ID), model, produsen, chipset,
+SoC, hardware, ABI, versi Android, SDK, total RAM, total penyimpanan, `firstSeen`
+dan `lastSeen`. Tidak ada nama, kontak, lokasi, atau isi ujian yang dikirim, dan
+tidak ada permission baru yang ditambahkan.
+
+Aplikasi juga membaca `/banned/{deviceCode}`. Jika admin menonaktifkan perangkat,
+aplikasi menampilkan layar "AKSES DINONAKTIFKAN" dengan pesan dari admin dan
+tombol "Tutup Aplikasi". Pembatasan hanya berlaku di dalam aplikasi ini. Jika
+jaringan gagal, aplikasi tetap berjalan normal. Admin Dashboard ada di
+folder `admin-dashboard/`.
+
+Deteksi "keluar aplikasi" tetap hanya tampil di HP murid itu sendiri.
 
 ## Cara install
 
@@ -102,7 +116,7 @@ Jalankan manual kapan saja lewat tab **Actions → Build & Release → Run workf
 
 ```bash
 java -jar apktool.jar d -f -r APK-BARU.apk -o src
-PATCH_ROOT="$PWD/src" python3 patch.py   # terapkan 21 patch ke source baru
+PATCH_ROOT="$PWD/src" python3 patch.py   # terapkan patch ke source baru
 git add -A && git commit -m "port to versionCode N"
 git tag vN.0.0 && git push origin vN.0.0
 ```

@@ -3360,86 +3360,32 @@
     return-object v0
 .end method
 
-.method public final showBanScreen()V
-    .locals 8
+.method public final showBanScreen(Ljava/lang/String;)V
+    .locals 3
 
-    new-instance v0, Landroid/widget/LinearLayout;
+    invoke-virtual {p0}, Lcom/sekolah/ujianbrowser/ExamActivity;->computeDeviceCode()Ljava/lang/String;
 
-    move-object v1, p0
+    move-result-object v0
 
-    check-cast v1, Landroid/content/Context;
+    invoke-static {p0, p1, v0}, Lcom/sekolah/ujianbrowser/DevNet;->buildBanView(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;)Landroid/view/View;
 
-    invoke-direct {v0, v1}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
+    move-result-object v0
 
-    const/4 v1, 0x1
+    const/4 v1, -0x1
 
-    invoke-virtual {v0, v1}, Landroid/widget/LinearLayout;->setOrientation(I)V
+    new-instance v2, Landroid/view/ViewGroup$LayoutParams;
 
-    const/16 v2, 0x11
+    invoke-direct {v2, v1, v1}, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V
 
-    invoke-virtual {v0, v2}, Landroid/widget/LinearLayout;->setGravity(I)V
+    invoke-virtual {p0, v0, v2}, Lcom/sekolah/ujianbrowser/ExamActivity;->addContentView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
-    const-string v3, "#2A0D0D"
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->webView:Landroid/webkit/WebView;
 
-    invoke-static {v3}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
+    if-eqz v1, :ban_no_webview
 
-    move-result v3
+    const/4 v2, 0x4
 
-    invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->setBackgroundColor(I)V
-
-    const/4 v3, 0x0
-
-    invoke-virtual {v0, v3}, Landroid/widget/LinearLayout;->setVisibility(I)V
-
-    new-instance v4, Landroid/widget/TextView;
-
-    move-object v5, p0
-
-    check-cast v5, Landroid/content/Context;
-
-    invoke-direct {v4, v5}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
-
-    const-string v5, "Aplikasi ini dinonaktifkan untuk device ini.\nHubungi admin."
-
-    check-cast v5, Ljava/lang/CharSequence;
-
-    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    const/4 v5, -0x1
-
-    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setTextColor(I)V
-
-    const/high16 v5, 0x41a00000    # 20.0f
-
-    invoke-virtual {v4, v5}, Landroid/widget/TextView;->setTextSize(F)V
-
-    invoke-virtual {v4, v2}, Landroid/widget/TextView;->setGravity(I)V
-
-    move-object v5, v4
-
-    check-cast v5, Landroid/view/View;
-
-    invoke-virtual {v0, v5}, Landroid/widget/LinearLayout;->addView(Landroid/view/View;)V
-
-    move-object v5, v0
-
-    check-cast v5, Landroid/view/View;
-
-    const/4 v7, -0x1
-
-    new-instance v6, Landroid/view/ViewGroup$LayoutParams;
-
-    invoke-direct {v6, v7, v7}, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V
-
-    invoke-virtual {p0, v5, v6}, Lcom/sekolah/ujianbrowser/ExamActivity;->addContentView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
-
-    iget-object v6, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->webView:Landroid/webkit/WebView;
-
-    if-eqz v6, :ban_no_webview
-
-    const/4 v7, 0x4
-
-    invoke-virtual {v6, v7}, Landroid/webkit/WebView;->setVisibility(I)V
+    invoke-virtual {v1, v2}, Landroid/webkit/WebView;->setVisibility(I)V
 
     :ban_no_webview
     return-void
