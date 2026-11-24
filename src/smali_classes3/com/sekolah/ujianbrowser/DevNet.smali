@@ -1172,3 +1172,15 @@
 
     return-object v0
 .end method
+
+.method public static final injectBanMsg(Landroid/app/Activity;Ljava/lang/String;)Ljava/lang/String;
+    .locals 1
+
+    invoke-static {p1}, Lcom/sekolah/ujianbrowser/DevNet;->banMessage(Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v0
+    if-eqz v0, :dev_inj_def
+    return-object v0
+    :dev_inj_def
+    const-string v0, "Aplikasi Tidak Dapat Digunakan"
+    return-object v0
+.end method

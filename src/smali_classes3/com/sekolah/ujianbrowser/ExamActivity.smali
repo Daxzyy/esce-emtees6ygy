@@ -2918,6 +2918,14 @@
 
     move-result v0
 
+    iget-boolean v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
+
+    if-eqz v2, :dev_ban_guard_ok
+
+    return v0
+
+    :dev_ban_guard_ok
+
     invoke-virtual {p1}, Landroid/view/MotionEvent;->getActionMasked()I
 
     move-result v1
@@ -3366,8 +3374,11 @@
 .method public final showBanScreen(Ljava/lang/String;)V
     .locals 2
 
-    iget-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
-    if-eqz v0, :dev_ban_not_set
+    iput-boolean v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
+    iput-object p1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanMessage:Ljava/lang/String;
+    invoke-static {p0, p1}, Lcom/sekolah/ujianbrowser/DevNet;->injectBanMsg(Landroid/app/Activity;Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v0
+    iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanMessage:Ljava/lang/String;
 
     invoke-static {p0, p1}, Lcom/sekolah/ujianbrowser/DevNet;->buildBanView(Landroid/app/Activity;Ljava/lang/String;)Landroid/view/View;
     move-result-object v0

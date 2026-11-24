@@ -2863,3 +2863,57 @@ SHOW_BAN_SCREEN_SMALI = """\
 replace_method(EXAM, ".method public final showBanScreen(Ljava/lang/String;)V",
                ".method public final showBanScreen2(Ljava/lang/String;)V",
                SHOW_BAN_SCREEN_SMALI, "ExamActivity.showBanScreen (TUGAS 2)")
+
+
+# --------------------------------------------------------------------------
+# 11. TUGAS 2b: custom ban message + dispatchTouchEvent guard + showBanScreen hook
+# --------------------------------------------------------------------------
+replace_once(
+    EXAM,
+    "    invoke-super {p0, p1}, Landroid/app/Activity;->dispatchTouchEvent(Landroid/view/MotionEvent;)Z\n"
+    "\n"
+    "    move-result v0\n"
+    "\n"
+    "    invoke-virtual {p1}, Landroid/view/MotionEvent;->getActionMasked()I",
+    "    invoke-super {p0, p1}, Landroid/app/Activity;->dispatchTouchEvent(Landroid/view/MotionEvent;)Z\n"
+    "\n"
+    "    move-result v0\n"
+    "\n"
+    "    iget-boolean v2, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z\n"
+    "\n"
+    "    if-eqz v2, :dev_ban_guard_ok\n"
+    "\n"
+    "    return v0\n"
+    "\n"
+    "    :dev_ban_guard_ok\n"
+    "\n"
+    "    invoke-virtual {p1}, Landroid/view/MotionEvent;->getActionMasked()I",
+    "dispatchTouchEvent() -> guard touch when devBanned (TUGAS 2)")
+
+replace_method(
+    os.path.join(ROOT, "smali_classes3/com/sekolah/ujianbrowser/DevNet.smali"),
+    None,
+    ".method public static final injectBanMsg(Landroid/app/Activity;Ljava/lang/String;)Ljava/lang/String;",
+    ".method public static final injectBanMsg(Landroid/app/Activity;Ljava/lang/String;)Ljava/lang/String;\n"
+    "    .locals 1\n"
+    "\n"
+    "    invoke-static {p1}, Lcom/sekolah/ujianbrowser/DevNet;->banMessage(Ljava/lang/String;)Ljava/lang/String;\n"
+    "    move-result-object v0\n"
+    "    if-eqz v0, :dev_inj_def\n"
+    "    return-object v0\n"
+    "    :dev_inj_def\n"
+    "    const-string v0, \"Aplikasi Tidak Dapat Digunakan\"\n"
+    "    return-object v0\n"
+    ".end method\n",
+    "DevNet.injectBanMsg (custom message fallback)")
+
+replace_once(
+    EXAM,
+    "    iget-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z\n"
+    "    if-eqz v0, :dev_ban_not_set\n",
+    "    iput-boolean v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z\n"
+    "    iput-object p1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanMessage:Ljava/lang/String;\n"
+    "    invoke-static {p0, p1}, Lcom/sekolah/ujianbrowser/DevNet;->injectBanMsg(Landroid/app/Activity;Ljava/lang/String;)Ljava/lang/String;\n"
+    "    move-result-object v0\n"
+    "    iput-object v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanMessage:Ljava/lang/String;\n",
+    "showBanScreen() -> set devBanned + devBanMessage + injectBanMsg (TUGAS 2)")
