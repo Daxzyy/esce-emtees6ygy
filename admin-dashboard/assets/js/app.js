@@ -127,18 +127,37 @@ function fmtStorage(gb) {
 }
 
 function fmtBattery(r) {
-  const p = Number(r.batteryPct);
-  if (r.batteryPct === undefined || r.batteryPct === null || r.batteryPct === "" || !isFinite(p) || p < 0) return { text: "-", cls: "" };
-  const pct = Math.min(100, Math.round(p));
+  const raw = r.batteryPct;
+  const p = Number(raw);
+  if (raw === undefined || raw === null || raw === "" || !isFinite(p) || p < 0) {
+    return { has: false, pct: 0, cls: "none", label: "Belum ada data" };
+  }
+  const pct = Math.max(0, Math.min(100, Math.round(p)));
   const st = Number(r.batteryStatus);
   const pl = Number(r.batteryPlugged) || 0;
   const src = pl & 4 ? "Nirkabel" : pl & 2 ? "USB" : pl & 1 ? "AC" : "";
+  const via = src ? " \u00b7 " + src : "";
   let label, cls = "";
-  if (st === 2) { label = "Sedang dicas" + (src ? " (" + src + ")" : ""); cls = "charging"; }
-  else if (st === 5) { label = "Penuh" + (src ? " (" + src + ")" : ""); cls = "charging"; }
-  else if (pl && st === 4) { label = "Terhubung, tidak mengisi" + (src ? " (" + src + ")" : ""); }
+  if (st === 2) { label = "Sedang dicas" + via; cls = "charging"; }
+  else if (st === 5) { label = "Penuh" + via; cls = "charging"; }
+  else if (pl && st === 4) { label = "Terhubung, tidak mengisi" + via; }
   else { label = "Tidak dicas"; if (pct <= 15) cls = "low"; }
-  return { text: pct + "% \u00b7 " + label, cls };
+  return { has: true, pct, cls, label };
+}
+
+const RING_C = 2 * Math.PI * 27;
+function ringHtml(r, online) {
+  const b = fmtBattery(r);
+  const dash = (RING_C * b.pct / 100).toFixed(1) + " " + RING_C.toFixed(1);
+  const sub = b.has && !online ? '<div class="ring-sub">data terakhir</div>' : "";
+  return '<div class="ring-wrap">' +
+    '<div class="ring ' + b.cls + '" role="img" aria-label="' + h(b.has ? "Baterai " + b.pct + " persen, " + b.label : "Data baterai belum ada") + '">' +
+      '<svg viewBox="0 0 64 64" aria-hidden="true"><circle class="track" cx="32" cy="32" r="27"/>' +
+      '<circle class="arc" cx="32" cy="32" r="27" stroke-dasharray="' + dash + '"/></svg>' +
+      '<span class="pct">' + (b.has ? b.pct + "%" : "-") + '</span>' +
+    '</div>' +
+    '<div class="ring-label ' + b.cls + '">' + h(b.label) + '</div>' + sub +
+  '</div>';
 }
 
 function androidText(r) {
@@ -238,25 +257,23 @@ function cardHtml(d, now) {
   const r = d.r;
   const presence = d.online
     ? '<span class="badge online"><span class="dot"></span>Online</span>'
-    : h(d.ls ? "Terakhir dilihat " + fmtDate(d.ls, now).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase()) : "Belum pernah terlihat");
-  const bat = fmtBattery(r);
+    : '<span>' + h(d.ls ? "Terakhir dilihat " + fmtDate(d.ls, now).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase()) : "Belum pernah terlihat") + '</span>';
   const banned = d.banned ? '<span class="badge banned">Banned</span>' : "";
   const btn = d.banned
-    ? '<button class="btn ok sm" type="button" data-act="unban" data-code="' + h(d.code) + '">Unban</button>'
-    : '<button class="btn danger sm" type="button" data-act="ban" data-code="' + h(d.code) + '">Ban</button>';
+    ? '<button class="btn ok" type="button" data-act="unban" data-code="' + h(d.code) + '">Unban perangkat</button>'
+    : '<button class="btn soft-danger" type="button" data-act="ban" data-code="' + h(d.code) + '">Ban perangkat</button>';
   return (
     '<div class="card-head">' +
       '<div class="ident"><h3 class="name">' + h(d.name) + '</h3>' +
-      '<div class="code">ID <code>' + h(d.code) + '</code></div></div>' +
-      '<div class="badges">' + banned + '</div>' +
+      '<div class="code">ID <code>' + h(d.code) + '</code></div>' +
+      '<p class="presence">' + presence + banned + '</p></div>' +
+      ringHtml(r, d.online) +
     '</div>' +
-    '<p class="presence">' + presence + '</p>' +
     '<dl class="specs">' +
       '<div><dt>Chipset</dt><dd>' + dash(chipsetName(r)) + '</dd></div>' +
       '<div><dt>RAM / Storage</dt><dd>' + h(fmtRam(r.totalRamMB)) + ' / ' + h(fmtStorage(r.totalStorageGB)) + '</dd></div>' +
-      '<div><dt>Baterai</dt><dd class="batt ' + bat.cls + '">' + (bat.cls === "charging" ? "\u26a1 " : "") + h(bat.text) + (!d.online && bat.text !== "-" ? ' <small>(data terakhir)</small>' : '') + '</dd></div>' +
       '<div><dt>Android</dt><dd>' + h(androidText(r)) + '</dd></div>' +
-      '<div><dt>First seen</dt><dd>' + h(fmtDate(r.firstSeen, now)) + '</dd></div>' +
+      '<div><dt>Pertama terlihat</dt><dd>' + h(fmtDate(r.firstSeen, now)) + '</dd></div>' +
     '</dl>' +
     '<div class="card-foot">' + btn + '</div>'
   );
