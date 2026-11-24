@@ -196,6 +196,7 @@ function isBanned(v) {
 let devices = [];          // data mentah dari Firebase (+ code, banned)
 let filter = "all";        // all | online | offline | banned
 let query = "";
+let gridMode = store.get("ujian_admin_grid") === "1";  // tampilan kartu: false = 1 per baris, true = 2 kolom
 let session = 0;           // naik tiap login/logout, supaya fetch lama diabaikan
 let inflight = false;
 let loaded = false;
@@ -583,6 +584,7 @@ const ICON_SHIELD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
 const ICON_SUN = '<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const ICON_MOON = '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>';
+const ICON_GRID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>';
 const ICON_LOGOUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>';
 
 const ICON_EYE = '<svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -603,6 +605,7 @@ function showDash() {
     '<header class="topbar"><div class="topbar-in">' +
       '<div class="brand-text"><strong>List Device</strong><span class="conn" id="conn"></span></div>' +
       '<div class="top-actions">' +
+        '<button class="btn icon-btn sq" type="button" id="grid" aria-label="Mode grid" aria-pressed="' + gridMode + '" title="Mode grid">' + ICON_GRID + '</button>' +
         '<button class="btn icon-btn sq" type="button" id="theme" aria-label="Ganti tema" title="Ganti tema">' + ICON_SUN + ICON_MOON + '</button>' +
         '<button class="btn icon-btn sq logout" type="button" id="logout" aria-label="Logout" title="Logout">' + ICON_LOGOUT + '</button>' +
       '</div>' +
@@ -622,12 +625,18 @@ function showDash() {
           '<button type="button" data-filter="banned" aria-pressed="false">Banned</button>' +
         '</div>' +
       '</section>' +
-      '<div class="list" id="list"></div>' +
+      '<div class="list' + (gridMode ? ' grid2' : '') + '" id="list"></div>' +
       '<div class="state" id="state">Memuat data...</div>' +
     '</main>';
 
   filter = "all"; query = "";
 
+  qs("#grid").addEventListener("click", function () {
+    gridMode = !gridMode;
+    store.set("ujian_admin_grid", gridMode ? "1" : "0");
+    this.setAttribute("aria-pressed", String(gridMode));
+    qs("#list").classList.toggle("grid2", gridMode);
+  });
   qs("#theme").addEventListener("click", toggleTheme);
   qs("#logout").addEventListener("click", logout);
   qs("#q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
