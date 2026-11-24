@@ -173,10 +173,10 @@ textarea.input { resize: vertical; min-height: 84px; }
 .ident { min-width: 0; }
 .name { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
 .name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.owner-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 160px; padding: 3px 9px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.owner-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 180px; padding: 4px 11px; border: 0; border-radius: 999px; background: var(--primary); color: var(--primary-ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
 .owner-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.owner-chip svg { flex: none; width: 13px; height: 13px; }
-.owner-chip.empty { color: var(--muted); font-weight: 500; }
+.owner-chip svg { flex: none; width: 14px; height: 14px; }
+.owner-chip.empty { background: var(--surface-2); color: var(--muted); border: 1px dashed var(--border); font-weight: 500; font-size: 12px; box-shadow: none; }
 .code { margin-top: 2px; color: var(--muted); font-size: 13px; }
 .code code { color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
 .badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex: none; }
