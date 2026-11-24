@@ -570,6 +570,76 @@
 
     invoke-static {v0, v1, v5, v6}, Lcom/sekolah/ujianbrowser/DevNet;->pl(Lorg/json/JSONObject;Ljava/lang/String;J)V
 
+    new-instance v1, Landroid/content/IntentFilter;
+
+    const-string v2, "android.intent.action.BATTERY_CHANGED"
+
+    invoke-direct {v1, v2}, Landroid/content/IntentFilter;-><init>(Ljava/lang/String;)V
+
+    const/4 v2, 0x0
+
+    invoke-virtual {p0, v2, v1}, Landroid/content/Context;->registerReceiver(Landroid/content/BroadcastReceiver;Landroid/content/IntentFilter;)Landroid/content/Intent;
+
+    move-result-object v1
+
+    if-eqz v1, :bat_done
+
+    const/4 v3, -0x1
+
+    const-string v2, "level"
+
+    invoke-virtual {v1, v2, v3}, Landroid/content/Intent;->getIntExtra(Ljava/lang/String;I)I
+
+    move-result v4
+
+    const-string v2, "scale"
+
+    invoke-virtual {v1, v2, v3}, Landroid/content/Intent;->getIntExtra(Ljava/lang/String;I)I
+
+    move-result v5
+
+    if-ltz v4, :bat_no_pct
+
+    if-lez v5, :bat_no_pct
+
+    mul-int/lit8 v4, v4, 0x64
+
+    div-int/2addr v4, v5
+
+    int-to-long v6, v4
+
+    const-string v2, "batteryPct"
+
+    invoke-static {v0, v2, v6, v7}, Lcom/sekolah/ujianbrowser/DevNet;->pl(Lorg/json/JSONObject;Ljava/lang/String;J)V
+
+    :bat_no_pct
+    const-string v2, "status"
+
+    invoke-virtual {v1, v2, v3}, Landroid/content/Intent;->getIntExtra(Ljava/lang/String;I)I
+
+    move-result v4
+
+    int-to-long v6, v4
+
+    const-string v2, "batteryStatus"
+
+    invoke-static {v0, v2, v6, v7}, Lcom/sekolah/ujianbrowser/DevNet;->pl(Lorg/json/JSONObject;Ljava/lang/String;J)V
+
+    const/4 v3, 0x0
+
+    const-string v2, "plugged"
+
+    invoke-virtual {v1, v2, v3}, Landroid/content/Intent;->getIntExtra(Ljava/lang/String;I)I
+
+    move-result v4
+
+    int-to-long v6, v4
+
+    const-string v2, "batteryPlugged"
+
+    invoke-static {v0, v2, v6, v7}, Lcom/sekolah/ujianbrowser/DevNet;->pl(Lorg/json/JSONObject;Ljava/lang/String;J)V
+
+    :bat_done
     const-string v1, "lastSeen"
 
     new-instance v2, Lorg/json/JSONObject;

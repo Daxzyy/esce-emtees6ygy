@@ -224,3 +224,6 @@ textarea.input { resize: vertical; min-height: 84px; }
   .dot { animation: none; }
   .btn { transition: none; }
 }
+
+.specs dd.batt.charging { color: var(--ok); font-weight: 600; }
+.specs dd.batt.low { color: var(--danger-text); font-weight: 600; }

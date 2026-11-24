@@ -126,6 +126,21 @@ function fmtStorage(gb) {
   return n + " GB";
 }
 
+function fmtBattery(r) {
+  const p = Number(r.batteryPct);
+  if (r.batteryPct === undefined || r.batteryPct === null || r.batteryPct === "" || !isFinite(p) || p < 0) return { text: "-", cls: "" };
+  const pct = Math.min(100, Math.round(p));
+  const st = Number(r.batteryStatus);
+  const pl = Number(r.batteryPlugged) || 0;
+  const src = pl & 4 ? "Nirkabel" : pl & 2 ? "USB" : pl & 1 ? "AC" : "";
+  let label, cls = "";
+  if (st === 2) { label = "Sedang dicas" + (src ? " (" + src + ")" : ""); cls = "charging"; }
+  else if (st === 5) { label = "Penuh" + (src ? " (" + src + ")" : ""); cls = "charging"; }
+  else if (pl && st === 4) { label = "Terhubung, tidak mengisi" + (src ? " (" + src + ")" : ""); }
+  else { label = "Tidak dicas"; if (pct <= 15) cls = "low"; }
+  return { text: pct + "% \u00b7 " + label, cls };
+}
+
 function androidText(r) {
   const v = valid(r.androidVersion) ? String(r.androidVersion).trim() : "";
   const sdkRaw = r.sdkInt !== undefined && r.sdkInt !== null && r.sdkInt !== "" ? r.sdkInt : r.sdk;
@@ -224,6 +239,7 @@ function cardHtml(d, now) {
   const presence = d.online
     ? '<span class="badge online"><span class="dot"></span>Online</span>'
     : h(d.ls ? "Terakhir dilihat " + fmtDate(d.ls, now).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase()) : "Belum pernah terlihat");
+  const bat = fmtBattery(r);
   const banned = d.banned ? '<span class="badge banned">Banned</span>' : "";
   const btn = d.banned
     ? '<button class="btn ok sm" type="button" data-act="unban" data-code="' + h(d.code) + '">Unban</button>'
@@ -238,6 +254,7 @@ function cardHtml(d, now) {
     '<dl class="specs">' +
       '<div><dt>Chipset</dt><dd>' + dash(chipsetName(r)) + '</dd></div>' +
       '<div><dt>RAM / Storage</dt><dd>' + h(fmtRam(r.totalRamMB)) + ' / ' + h(fmtStorage(r.totalStorageGB)) + '</dd></div>' +
+      '<div><dt>Baterai</dt><dd class="batt ' + bat.cls + '">' + (bat.cls === "charging" ? "\u26a1 " : "") + h(bat.text) + (!d.online && bat.text !== "-" ? ' <small>(data terakhir)</small>' : '') + '</dd></div>' +
       '<div><dt>Android</dt><dd>' + h(androidText(r)) + '</dd></div>' +
       '<div><dt>First seen</dt><dd>' + h(fmtDate(r.firstSeen, now)) + '</dd></div>' +
     '</dl>' +
