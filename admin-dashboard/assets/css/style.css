@@ -173,11 +173,12 @@ textarea.input { resize: vertical; min-height: 84px; }
 .ident { min-width: 0; }
 .name { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
 .name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.owner-chip { display: inline-flex; align-items: center; gap: 5px; max-width: 180px; padding: 2px 0; border: 0; background: none; color: var(--primary); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.owner-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 190px; padding: 3px 11px; border: 1.5px solid var(--primary); border-radius: 999px; background: transparent; color: var(--primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .owner-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.owner-chip svg { flex: none; width: 13px; height: 13px; opacity: .6; }
-.owner-chip:hover svg { opacity: 1; }
-.owner-chip.empty { color: var(--muted); font-weight: 400; font-size: 13px; }
+.owner-chip svg { flex: none; width: 13px; height: 13px; }
+.owner-chip:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.owner-chip.empty { border: 1.5px dashed var(--border); color: var(--muted); font-weight: 500; }
+.owner-chip.empty:hover { border-color: var(--primary); color: var(--primary); }
 .code { margin-top: 2px; color: var(--muted); font-size: 13px; }
 .code code { color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
 .badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex: none; }
