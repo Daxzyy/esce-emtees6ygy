@@ -278,6 +278,33 @@ function matchesFilter(d) {
   return true;
 }
 
+function copyId(btn) {
+  const text = btn.dataset.code || "";
+  const done = function () {
+    btn.innerHTML = ICON_CHECK;
+    btn.classList.add("copied");
+    clearTimeout(btn._t);
+    btn._t = setTimeout(function () { btn.innerHTML = ICON_COPY; btn.classList.remove("copied"); }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text) && done(); });
+  } else if (fallbackCopy(text)) {
+    done();
+  }
+}
+
+function fallbackCopy(text) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch (e) { return false; }
+}
+
 function cardHtml(d, now) {
   const r = d.r;
   const presence = d.online
@@ -296,7 +323,8 @@ function cardHtml(d, now) {
       '<div class="ident"><div class="name-row"><h3 class="name">' + h(d.name) + '</h3>' +
       '<button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button></div>' +
-      '<div class="code">ID <code>' + h(d.code) + '</code></div>' +
+      '<div class="code">ID <code>' + h(d.code) + '</code>' +
+      '<button class="copy-btn" type="button" data-act="copy" data-code="' + h(d.code) + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></div>' +
       '<p class="presence">' + presence + banned + '</p>' +
       (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p>' : '') +
     '</div>' +
@@ -585,6 +613,8 @@ const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 const ICON_SUN = '<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const ICON_MOON = '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>';
 const ICON_GRID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>';
+const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>';
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const ICON_LOGOUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>';
 
 const ICON_EYE = '<svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -650,7 +680,8 @@ function showDash() {
   qs("#list").addEventListener("click", e => {
     const b = e.target.closest("button[data-act]");
     if (!b) return;
-    if (b.dataset.act === "owner") openOwner(b.dataset.code);
+    if (b.dataset.act === "copy") copyId(b);
+    else if (b.dataset.act === "owner") openOwner(b.dataset.code);
     else if (b.dataset.act === "ban") openBan(b.dataset.code);
     else if (b.dataset.act === "banmsg") openBanMsg(b.dataset.code);
     else openUnban(b.dataset.code);

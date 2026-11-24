@@ -329,3 +329,13 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
   .list.grid2 .specs dd { font-size: 13px; }
   .list.grid2 .card-foot .btn { min-height: 42px; font-size: 13px; border-radius: 12px; }
 }
+
+/* ===== Tombol salin ID (menempel di kanan atas teks ID) ===== */
+.copy-btn {
+  display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0;
+  margin-left: 3px; position: relative; top: -4px; vertical-align: middle;
+  border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer;
+}
+.copy-btn svg { width: 14px; height: 14px; }
+.copy-btn:hover { color: var(--text); background: var(--surface-2); }
+.copy-btn.copied { color: var(--ok); }
