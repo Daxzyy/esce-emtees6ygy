@@ -248,7 +248,8 @@ function renderConn() {
   const el = qs("#conn");
   if (!el) return;
   el.classList.toggle("err", !connOk);
-  el.textContent = connOk ? "Live \u00b7 " + fmtClock(nowMs()) : "Gagal memuat, mencoba lagi...";
+  if (!el.firstChild) el.innerHTML = '<span class="live-dot"></span><span class="conn-text"></span>';
+  el.lastChild.textContent = connOk ? "Live \u00b7 " + fmtClock(nowMs()) : "Gagal memuat, mencoba lagi...";
 }
 function setConn(ok) { connOk = ok; renderConn(); }
 
@@ -536,7 +537,7 @@ function showDash() {
 
   qs("#app").innerHTML =
     '<header class="topbar"><div class="topbar-in">' +
-      '<div class="brand-text"><strong>Perangkat</strong><span class="conn" id="conn"></span></div>' +
+      '<div class="brand-text"><strong>List Device</strong><span class="conn" id="conn"></span></div>' +
       '<div class="top-actions">' +
         '<button class="btn icon-btn sq" type="button" id="theme" aria-label="Ganti tema" title="Ganti tema">' + ICON_SUN + ICON_MOON + '</button>' +
         '<button class="btn icon-btn sq logout" type="button" id="logout" aria-label="Logout" title="Logout">' + ICON_LOGOUT + '</button>' +
