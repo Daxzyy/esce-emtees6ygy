@@ -369,9 +369,37 @@ function setText(sel, v) {
 let lastFocus = null;
 let modalBusy = false;
 
+// Modal ikut ukuran viewport visual: waktu keyboard HP muncul, backdrop menyusut ke area
+// di atas keyboard sehingga modal selalu kelihatan dan menempel di atasnya.
+let vvHandler = null;
+function bindViewport() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  vvHandler = function () {
+    const bd = qs(".backdrop");
+    if (!bd) return;
+    bd.style.top = vv.offsetTop + "px";
+    bd.style.left = vv.offsetLeft + "px";
+    bd.style.width = vv.width + "px";
+    bd.style.height = vv.height + "px";
+  };
+  vv.addEventListener("resize", vvHandler);
+  vv.addEventListener("scroll", vvHandler);
+  vvHandler();
+}
+function unbindViewport() {
+  const vv = window.visualViewport;
+  if (vv && vvHandler) {
+    vv.removeEventListener("resize", vvHandler);
+    vv.removeEventListener("scroll", vvHandler);
+  }
+  vvHandler = null;
+}
+
 function closeModal() {
   const root = qs("#modal-root");
   if (!root || !root.firstChild) return;
+  unbindViewport();
   root.innerHTML = "";
   document.body.classList.remove("modal-open");
   modalBusy = false;
@@ -392,6 +420,7 @@ function openModal(cfg) {
       '<button class="btn ' + cfg.cls + '" type="button" id="m-ok">' + h(cfg.okText) + '</button>' +
     '</div></div></div>';
   document.body.classList.add("modal-open");
+  bindViewport();
 
   const ok = qs("#m-ok");
   const cancel = qs("#m-cancel");
