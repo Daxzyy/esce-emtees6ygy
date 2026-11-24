@@ -2822,5 +2822,44 @@ replace_method(EXAM, ".method public final showBanScreen()V",
                SHOW_BAN_SCREEN_SMALI,
                "ExamActivity.showBanScreen(String) -> professional ban screen with custom message")
 
-print("\n".join(LOG))
-print("TOTAL PATCHES: %d" % len(LOG))
+
+
+# --------------------------------------------------------------------------
+# 10. TUGAS 2: ExamActivity -> devBanMessage fields, showBanScreen redesign
+# --------------------------------------------------------------------------
+ensure_fields(EXAM, [
+    ".field public devBanMessage:Ljava/lang/String;",
+    ".field private devBanned:Z",
+], "ExamActivity: add devBanMessage/devBanned fields (TUGAS 2)")
+
+SHOW_BAN_SCREEN_SMALI = """\
+.method public final showBanScreen(Ljava/lang/String;)V
+    .locals 2
+
+    iget-boolean v0, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->devBanned:Z
+    if-eqz v0, :dev_ban_not_set
+
+    invoke-static {p0, p1}, Lcom/sekolah/ujianbrowser/DevNet;->buildBanView(Landroid/app/Activity;Ljava/lang/String;)Landroid/view/View;
+    move-result-object v0
+    goto :dev_ban_add
+
+    :dev_ban_not_set
+    invoke-static {p0, p1, 0x0}, Lcom/sekolah/ujianbrowser/DevNet;->buildBanView(Landroid/app/Activity;Ljava/lang/String;Ljava/lang/String;)Landroid/view/View;
+    move-result-object v0
+
+    :dev_ban_add
+    const/4 v1, -0x1
+    new-instance v2, Landroid/view/ViewGroup$LayoutParams;
+    invoke-direct {v2, v1, v1}, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V
+    invoke-virtual {p0, v0, v2}, Lcom/sekolah/ujianbrowser/ExamActivity;->addContentView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
+    iget-object v1, p0, Lcom/sekolah/ujianbrowser/ExamActivity;->webView:Landroid/webkit/WebView;
+    if-eqz v1, :ban_no_webview
+    const/4 v2, 0x4
+    invoke-virtual {v1, v2}, Landroid/webkit/WebView;->setVisibility(I)V
+    :ban_no_webview
+    return-void
+.end method
+"""
+replace_method(EXAM, ".method public final showBanScreen(Ljava/lang/String;)V",
+               ".method public final showBanScreen2(Ljava/lang/String;)V",
+               SHOW_BAN_SCREEN_SMALI, "ExamActivity.showBanScreen (TUGAS 2)")
