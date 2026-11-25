@@ -358,13 +358,26 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .card-foot .btn.hist-btn { flex: none; width: 48px; padding: 0; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
 .card-foot .btn.hist-btn svg { width: 20px; height: 20px; }
 .card-foot .btn.hist-btn:hover { color: var(--text); }
-.hist-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; overscroll-behavior: contain; }
-.hist-item { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
-.hist-item.now { border-color: var(--danger-text); }
-.hist-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
-.hist-tag { padding: 1px 8px; border-radius: 999px; background: var(--border); color: var(--text); font-weight: 700; }
-.hist-tag.now { background: var(--danger-bg); color: var(--danger-text); }
-.hist-msg { font-size: 14px; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+.hist-list { max-height: 55vh; overflow-y: auto; overscroll-behavior: contain; padding: 2px 2px 2px 0; }
+.modal p.hist-sub { margin: -4px 0 14px; font-size: 13px; color: var(--muted); }
+.hist-sub code { color: var(--text); }
+
+/* Linimasa vertikal: titik + garis, pesan dipotong 2 baris */
+.tl { position: relative; padding-left: 20px; }
+.tl::before { content: ""; position: absolute; left: 4px; top: 8px; bottom: 8px; width: 1px; background: var(--border); }
+.tl-item { position: relative; margin-bottom: 16px; }
+.tl-item:last-child { margin-bottom: 0; }
+.tl-dot { position: absolute; left: -20px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); opacity: .6; }
+.tl-item.now .tl-dot { background: var(--danger-text); opacity: 1; box-shadow: 0 0 0 3px var(--danger-bg); }
+.tl-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 3px; }
+.tl-tag { padding: 1px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-size: 11px; font-weight: 700; }
+.tl-tag.now { background: var(--danger-bg); border-color: transparent; color: var(--danger-text); }
+.tl-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.modal .tl-msg { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text); overflow-wrap: anywhere; white-space: pre-wrap;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.modal .tl-item.open .tl-msg { display: block; -webkit-line-clamp: unset; line-clamp: unset; overflow: visible; }
+.tl-more { margin-top: 2px; padding: 0; border: 0; background: transparent; color: var(--primary); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.tl-more:hover { text-decoration: underline; }
 .modal p.hist-empty { margin: 0; text-align: center; font-size: 14px; }
 
 /* Modal riwayat: selalu di tengah layar, termasuk di HP (bukan sheet bawah) */

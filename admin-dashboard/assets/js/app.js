@@ -106,6 +106,21 @@ function fmtDate(ts, now) {
   return p.day + " " + MONTHS[p.month - 1] + " " + p.year + ", " + t;
 }
 
+// Versi ringkas buat linimasa riwayat: "Hari ini 11.24", "Kemarin 20.10", "23 Nov 09.02"
+// (tahun cuma ditampilkan kalau bukan tahun ini)
+function fmtShort(ts, now) {
+  const n = Number(ts);
+  if (!n || isNaN(n)) return "-";
+  const p = zparts(n);
+  const np = zparts(now);
+  const diff = dayNum(np) - dayNum(p);
+  const t = pad(p.hour) + "." + pad(p.minute);
+  if (diff <= 0) return "Hari ini " + t;
+  if (diff === 1) return "Kemarin " + t;
+  if (p.year === np.year) return p.day + " " + MONTHS[p.month - 1] + " " + t;
+  return p.day + " " + MONTHS[p.month - 1] + " " + p.year + ", " + t;
+}
+
 function fmtClock(ms) {
   const d = new Date(ms);
   const parts = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(d);
@@ -758,6 +773,25 @@ async function logBanMsg(code, message, type) {
   } catch (e) { console.error("riwayat pesan ban gagal dicatat", e); }
 }
 
+function histItemHtml(label, cls, time, msg) {
+  return '<div class="tl-item' + (cls ? ' ' + cls : '') + '">' +
+    '<span class="tl-dot" aria-hidden="true"></span>' +
+    '<div class="tl-meta"><span class="tl-tag' + (cls === 'now' ? ' now' : '') + '">' + h(label) + '</span>' +
+    '<span class="tl-time">' + h(time) + '</span></div>' +
+    '<p class="tl-msg">' + h(msg) + '</p>' +
+    '<button class="tl-more" type="button" data-more hidden>Selengkapnya</button></div>';
+}
+
+// "Selengkapnya" cuma muncul kalau teks memang kepotong 2 baris.
+function setupHistClamp(box) {
+  box.querySelectorAll(".tl-item").forEach(it => {
+    const msg = it.querySelector(".tl-msg");
+    const btn = it.querySelector("[data-more]");
+    if (!msg || !btn) return;
+    if (msg.scrollHeight > msg.clientHeight + 1) btn.hidden = false;
+  });
+}
+
 async function openHistory(code) {
   const d = findDevice(code);
   const name = d ? deviceName(d) : code;
@@ -768,7 +802,7 @@ async function openHistory(code) {
     okText: "Tutup",
     noCancel: true,
     body:
-      '<p>Pesan ban custom untuk <strong>' + h(name) + '</strong> (ID <code>' + h(code) + '</code>).</p>' +
+      '<p class="hist-sub">' + h(name) + ' &middot; <code>' + h(code) + '</code></p>' +
       '<div class="hist-list" id="m-hist"><p class="hist-empty">Memuat...</p></div>',
     onConfirm: async () => {}
   });
@@ -786,16 +820,33 @@ async function openHistory(code) {
   const now = nowMs();
   let html = "";
   if (d && d.banned && d.banMsg) {
-    html += '<div class="hist-item now"><div class="hist-meta"><span class="hist-tag now">Aktif sekarang</span></div>' +
-      '<div class="hist-msg">' + h(d.banMsg) + '</div></div>';
+    // Pesan aktif biasanya = entri terbaru di riwayat: gabung, pakai jam aslinya (tidak dobel)
+    if (items.length && items[0].message === d.banMsg) {
+      html += histItemHtml("Aktif sekarang", "now", fmtShort(items[0].at, now), d.banMsg);
+      items = items.slice(1);
+    } else {
+      html += histItemHtml("Aktif sekarang", "now", "Sekarang", d.banMsg);
+    }
   }
   html += items.map(x =>
-    '<div class="hist-item"><div class="hist-meta"><span class="hist-tag">' + (x.type === "edit" ? "Diedit" : "Ban") + '</span>' +
-    '<span>' + h(fmtDate(x.at, now)) + '</span></div><div class="hist-msg">' + h(x.message) + '</div></div>'
+    histItemHtml(x.type === "edit" ? "Diedit" : "Ban", "", fmtShort(x.at, now), x.message)
   ).join("");
-  if (!html) html = '<p class="hist-empty">' + (failed ? "Gagal memuat riwayat." : "Belum ada riwayat pesan custom.") + '</p>';
-  box.innerHTML = html;
+  if (!html) {
+    box.innerHTML = '<p class="hist-empty">' + (failed ? "Gagal memuat riwayat." : "Belum ada riwayat pesan custom.") + '</p>';
+    return;
+  }
+  box.innerHTML = '<div class="tl">' + html + '</div>';
+  setupHistClamp(box);
 }
+
+// Buka/tutup pesan panjang di linimasa riwayat
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-more]");
+  if (!b) return;
+  const item = b.closest(".tl-item");
+  const open = item.classList.toggle("open");
+  b.textContent = open ? "Sembunyikan" : "Selengkapnya";
+});
 
 function openUnban(code) {
   const d = findDevice(code);

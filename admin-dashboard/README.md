@@ -18,6 +18,9 @@ Vercel, Root Directory = `admin-dashboard/` (repo publik). Tanpa build step.
 - Tombol filter (Semua/Online/Offline/Banned) menampilkan jumlah device per kategori.
 - Riwayat pesan ban custom per device: tombol jam di kartu. Tiap ban/edit dengan pesan terisi dicatat
   ke `/ban_history/{kode}/{pushId}` = `{message, at, type}` (type: `ban` atau `edit`).
+  Tampilan modal = linimasa vertikal (titik + garis), terbaru di atas, pesan dipotong 2 baris dengan
+  tombol "Selengkapnya" (muncul cuma kalau memang kepotong). Pesan yang sedang aktif ditandai
+  "Aktif sekarang" (digabung dengan entri terbaru kalau pesannya sama, tidak dobel).
 - Ban pakai modal (input pesan opsional), Unban pakai modal konfirmasi.
   Ban menulis `/banned/{kode}` = `{banned: true, message}`, Unban menghapus node itu
 - Tema light/dark (ikut sistem, bisa diganti lewat tombol di header, tersimpan)
