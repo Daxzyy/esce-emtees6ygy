@@ -342,7 +342,7 @@ function gridCardHtml(d, now) {
     '</div>' +
     '<div class="g-bd">' +
       '<h3 class="name">' + h(d.name) + '</h3>' +
-      '<button class="g-owner' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + code + '" aria-label="Edit label pemilik" title="Edit label pemilik">' + h(d.owner || "+ Tambah label") + '</button>' +
+      '<button class="g-owner' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + code + '" aria-label="Edit label pemilik" title="Edit label pemilik">' + ICON_PENCIL + '<span>' + h(d.owner || "Tambah label") + '</span></button>' +
       quote +
       '<div class="g-id"><span class="id-chip"><code>' + code + '</code>' +
         '<button class="copy-btn" type="button" data-act="copy" data-code="' + code + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></span></div>' +

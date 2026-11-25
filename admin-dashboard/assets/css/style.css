@@ -418,7 +418,9 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .g-bd { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 10px 12px 12px; }
 .g-bd .name { margin: 0; font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .g-owner, .g-q { display: block; max-width: 100%; padding: 0; border: 0; background: none; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
-.g-owner { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-owner { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; min-height: 24px; }
+.g-owner svg { flex: none; width: 12px; height: 12px; }
+.g-owner span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .g-owner.empty, .g-q.empty { font-weight: 500; opacity: .8; }
 .g-owner:hover, .g-q:hover { text-decoration: underline; }
 .g-q { margin-top: 2px; color: var(--danger-text); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
