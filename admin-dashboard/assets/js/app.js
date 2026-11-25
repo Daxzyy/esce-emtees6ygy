@@ -778,18 +778,7 @@ function histItemHtml(label, cls, time, msg) {
     '<span class="tl-dot" aria-hidden="true"></span>' +
     '<div class="tl-meta"><span class="tl-tag' + (cls === 'now' ? ' now' : '') + '">' + h(label) + '</span>' +
     '<span class="tl-time">' + h(time) + '</span></div>' +
-    '<p class="tl-msg">' + h(msg) + '</p>' +
-    '<button class="tl-more" type="button" data-more hidden>Selengkapnya</button></div>';
-}
-
-// "Selengkapnya" cuma muncul kalau teks memang kepotong 2 baris.
-function setupHistClamp(box) {
-  box.querySelectorAll(".tl-item").forEach(it => {
-    const msg = it.querySelector(".tl-msg");
-    const btn = it.querySelector("[data-more]");
-    if (!msg || !btn) return;
-    if (msg.scrollHeight > msg.clientHeight + 1) btn.hidden = false;
-  });
+    '<pre class="tl-msg">' + h(msg) + '</pre></div>';
 }
 
 async function openHistory(code) {
@@ -836,17 +825,7 @@ async function openHistory(code) {
     return;
   }
   box.innerHTML = '<div class="tl">' + html + '</div>';
-  setupHistClamp(box);
 }
-
-// Buka/tutup pesan panjang di linimasa riwayat
-document.addEventListener("click", e => {
-  const b = e.target.closest("[data-more]");
-  if (!b) return;
-  const item = b.closest(".tl-item");
-  const open = item.classList.toggle("open");
-  b.textContent = open ? "Sembunyikan" : "Selengkapnya";
-});
 
 function openUnban(code) {
   const d = findDevice(code);
