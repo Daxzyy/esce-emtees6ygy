@@ -598,24 +598,32 @@ const BAN_TEMPLATES = [
 
 function tplFieldHtml(current) {
   const idx = BAN_TEMPLATES.findIndex(t => t.text === current);
-  const legacy = !!current && idx < 0;
-  const sel = legacy ? "old" : String(idx);
+  const sel = idx >= 0 ? String(idx) : "-1";
   const chip = (key, label) => '<button class="tpl-chip' + (sel === key ? ' on' : '') + '" type="button" data-i="' + key + '" aria-pressed="' + (sel === key) + '">' + h(label) + '</button>';
-  const chips = chip("-1", "Default") + BAN_TEMPLATES.map((t, i) => chip(String(i), t.label)).join("") + (legacy ? chip("old", "Pesan saat ini") : "");
-  const value = legacy ? current : idx >= 0 ? BAN_TEMPLATES[idx].text : "";
-  return '<div class="field"><span>Template pesan</span><div class="tpl-row" id="m-tpls">' + chips + '</div>' +
-    '<textarea class="input" id="m-msg" rows="7" readonly placeholder="Pesan default aplikasi akan ditampilkan.">' + h(value) + '</textarea></div>';
+  const chips = chip("-1", "Custom") + BAN_TEMPLATES.map((t, i) => chip(String(i), t.label)).join("");
+  const value = idx >= 0 ? BAN_TEMPLATES[idx].text : current || "";
+  return '<div class="field"><span>Pesan ban</span><div class="tpl-row" id="m-tpls">' + chips + '</div>' +
+    '<textarea class="input" id="m-msg" rows="7" maxlength="300"' + (idx >= 0 ? ' readonly' : '') + ' placeholder="Tulis pesan sendiri. Kosongkan untuk pakai pesan default.">' + h(value) + '</textarea></div>';
 }
 
 function bindTemplates(current) {
   const box = qs("#m-tpls");
   const area = qs("#m-msg");
   if (!box || !area) return;
+  let draft = BAN_TEMPLATES.some(t => t.text === current) ? "" : current || "";
   box.addEventListener("click", e => {
     const b = e.target.closest(".tpl-chip");
     if (!b) return;
     const k = b.dataset.i;
-    area.value = k === "-1" ? "" : k === "old" ? current : BAN_TEMPLATES[Number(k)].text;
+    if (area.readOnly === false && !BAN_TEMPLATES.some(t => t.text === area.value)) draft = area.value;
+    if (k === "-1") {
+      area.readOnly = false;
+      area.value = draft;
+      area.focus();
+    } else {
+      area.readOnly = true;
+      area.value = BAN_TEMPLATES[Number(k)].text;
+    }
     box.querySelectorAll(".tpl-chip").forEach(c => {
       const on = c === b;
       c.classList.toggle("on", on);
