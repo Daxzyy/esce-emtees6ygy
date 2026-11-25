@@ -419,7 +419,9 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .g-bd .name { margin: 0; font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .g-owner, .g-q { display: block; max-width: 100%; padding: 0; border: 0; background: none; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
 .g-owner { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; min-height: 24px; }
-.g-owner svg { flex: none; width: 12px; height: 12px; }
+.g-owner svg { flex: none; width: 14px; height: 14px; }
+.g-owner > svg:last-child { width: 11px; height: 11px; opacity: .55; }
+.g-owner:hover > svg:last-child { opacity: 1; }
 .g-owner span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .g-owner.empty, .g-q.empty { font-weight: 500; opacity: .8; }
 .g-owner:hover, .g-q:hover { text-decoration: underline; }
