@@ -320,15 +320,10 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .tap-fx { animation: tapfx .5s ease-out; }
 @media (prefers-reduced-motion: reduce) { .tap-fx { animation: none; } }
 
-/* ===== Modal sebagai sheet di HP: menempel di atas keyboard ===== */
-@keyframes sheetup { from { transform: translateY(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* ===== Modal di tengah layar, juga di HP ===== */
 @media (max-width: 560px) {
-  .backdrop { place-items: end center; padding: 0; overflow: hidden; }
-  .modal {
-    max-width: none; border-radius: 22px 22px 0 0; border-width: 1px 0 0;
-    padding: 22px 18px calc(16px + env(safe-area-inset-bottom));
-    animation: sheetup .3s ease-out;
-  }
+  .backdrop { place-items: center; padding: 12px; overflow: hidden; }
+  .modal { max-width: 440px; border-radius: var(--radius); border-width: 1px; padding: 20px 18px 0; animation: popin .2s ease-out; }
   .modal-actions .btn { flex: 1; min-height: 48px; }
 }
 @media (prefers-reduced-motion: reduce) { .modal { animation: none; } }
@@ -468,5 +463,4 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 
 .modal { padding-bottom: 0; }
 .modal-actions { position: sticky; bottom: 0; z-index: 1; margin-top: 16px; padding: 12px 0 18px; background: var(--surface); }
-@media (max-width: 560px) { .modal-actions { padding-bottom: calc(16px + env(safe-area-inset-bottom)); } }
 .modal.center .modal-actions { padding-bottom: 22px; }
