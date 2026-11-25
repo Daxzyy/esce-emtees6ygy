@@ -475,3 +475,10 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .modal { padding-bottom: 0; }
 .modal-actions { position: sticky; bottom: 0; z-index: 1; margin-top: 16px; padding: 12px 0 18px; background: var(--surface); }
 .modal.center .modal-actions { padding-bottom: 22px; }
+
+/* Modal riwayat: kolom flex supaya tetap rapi saat di-zoom / layar kecil.
+   Judul tetap, daftar mengisi sisa ruang dan scroll sendiri, tombol di bawah tanpa menimpa isi. */
+.modal.center { display: flex; flex-direction: column; max-height: 100%; overflow: hidden; }
+.modal.center h2, .modal.center .hist-sub { flex: none; }
+.modal.center .hist-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+.modal.center .modal-actions { position: static; flex: none; margin-top: 0; padding: 14px 0 0; background: transparent; }
