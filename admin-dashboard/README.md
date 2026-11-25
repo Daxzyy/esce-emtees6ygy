@@ -8,7 +8,8 @@ Vercel, Root Directory = `admin-dashboard/` (repo publik). Tanpa build step.
 - Header + ringkasan: Total device, Online, Banned
 - Search (nama, ID, chipset) dan filter Semua / Online / Offline / Banned
 - Daftar device berbentuk card responsif (tanpa scroll horizontal, di HP bertumpuk)
-  - Nama Device = manufacturer + model (contoh `OPPO CPH2269`), ID Device = kode device
+  - Nama Device = nama resmi GSM Arena kalau modelnya dikenali, kalau tidak fallback ke manufacturer + model (contoh `OPPO CPH2269`), ID Device = kode device
+  - Gambar HP resmi GSM Arena tampil di kiri nama, ukuran tetap dan tidak terdistorsi
   - Chipset, RAM / Storage, Android (SDK), First seen
 - Status ala WhatsApp: badge **Online** (hijau) kalau `lastSeen` <= 10 detik yang lalu,
   kalau tidak tampil "Terakhir dilihat ..."
@@ -33,6 +34,8 @@ Zona Asia/Jakarta, tanpa garis miring: `Hari ini 14.32`, `Kemarin 09.10`,
 `androidVersion`, `sdkInt`, `totalRamMB`, `totalStorageGB`, `firstSeen`, `lastSeen`.
 Field `deviceName` (nama bikinan user dari pengaturan HP) sudah tidak dikirim lagi oleh app
 dan tidak dipakai dashboard.
+
+`gsmaName`, `gsmaImage`, `gsmaUrl`, `gsmaModels`, dan `gsmaResolvedAt` ditulis otomatis oleh resolver GSM Arena kalau kode modelnya cocok. Kalau tidak ketemu, field `gsmaMissing` + `gsmaCheckedAt` dipakai supaya tidak scraping ulang selama 7 hari. Index tetap ada di `data/gsma-index.json`, dan workflow `.github/workflows/gsma-resolve.yml` menjalankan backfill tiap 10 menit untuk device lama maupun baru.
 
 `lastSeen` ditulis app memakai server timestamp Firebase (`{".sv":"timestamp"}`), jadi tidak
 terpengaruh jam HP yang salah. Dashboard membandingkannya dengan jam server kalau header

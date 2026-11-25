@@ -174,6 +174,8 @@ textarea.input { resize: vertical; min-height: 84px; }
 .card.is-banned { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 55%, transparent); }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .ident { min-width: 0; }
+.ident-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.device-thumb { flex: none; width: 48px; height: 48px; object-fit: contain; padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
 .name { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
 .name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .owner-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 190px; padding: 3px 11px; border: 1.5px solid var(--primary); border-radius: 999px; background: transparent; color: var(--primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -235,6 +237,7 @@ textarea.input { resize: vertical; min-height: 84px; }
   .seg { width: 100%; }
   .seg button { flex: 1; padding: 8px 4px; }
   .page { padding: 14px 12px 32px; }
+  .device-thumb { width: 42px; height: 42px; }
   .topbar-in { padding: 16px 12px 0; }
   .btn .lbl { display: none; }
   .btn.logout .lbl { display: inline; }
@@ -420,6 +423,9 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .g-hero.ban .g-sub { color: var(--danger-text); }
 .g-bd { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 10px 12px 12px; }
 .g-bd .name { margin: 0; font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.g-title .name { flex: 1; min-width: 0; }
+.g-thumb { width: 34px; height: 34px; padding: 2px; border-radius: 9px; }
 .g-owner, .g-q { display: block; max-width: 100%; padding: 0; border: 0; background: none; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
 .g-owner { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; min-height: 24px; }
 .g-owner svg { flex: none; width: 14px; height: 14px; }

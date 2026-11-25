@@ -1,0 +1,13 @@
+{
+  "name": "esce-device-gsma",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "backfill:gsma": "node scripts/backfill-gsma.js",
+    "build:gsma-index": "node scripts/build-index.js"
+  },
+  "dependencies": {
+    "axios": "^1.18.1",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}

@@ -115,12 +115,17 @@ function fmtClock(ms) {
 
 /* ===================== Format device ===================== */
 function deviceName(r) {
+  if (valid(r.gsmaName)) return String(r.gsmaName).trim();
   const model = valid(r.model) ? String(r.model).trim() : "";
   let maker = valid(r.manufacturer) ? String(r.manufacturer).trim() : "";
   if (maker) maker = maker.charAt(0).toUpperCase() + maker.slice(1);
   let name = model;
   if (maker && !model.toLowerCase().startsWith(maker.toLowerCase())) name = (maker + " " + model).trim();
   return name || "Device tanpa nama";
+}
+
+function deviceImage(r) {
+  return valid(r.gsmaImage) ? String(r.gsmaImage).trim() : "";
 }
 
 function chipsetName(r) {
@@ -263,7 +268,7 @@ function setConn(ok) { connOk = ok; renderConn(); }
 function decorate(r, now) {
   const ls = Number(r.lastSeen) || 0;
   const online = ls > 0 && Math.abs(now - ls) <= ONLINE_MS;
-  return { r, code: r.code, name: deviceName(r), owner: r.owner || "", ls, online, banned: !!r.banned, banMsg: r.banMsg || "" };
+  return { r, code: r.code, name: deviceName(r), image: deviceImage(r), owner: r.owner || "", ls, online, banned: !!r.banned, banMsg: r.banMsg || "" };
 }
 
 function matchesQuery(d) {
@@ -349,7 +354,8 @@ function gridCardHtml(d, now) {
       '<div class="g-sub">' + h(sub) + '</div>' +
     '</div>' +
     '<div class="g-bd">' +
-      '<h3 class="name">' + h(d.name) + '</h3>' +
+      '<div class="g-title">' + (d.image ? '<img class="device-thumb g-thumb" src="' + h(d.image) + '" alt="' + h(d.name) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : "") +
+      '<h3 class="name">' + h(d.name) + '</h3></div>' +
       '<button class="g-owner' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + code + '" aria-label="Edit label pemilik" title="Edit label pemilik">' + ICON_USER + '<span>' + h(d.owner || "Tambah label") + '</span>' + ICON_PENCIL + '</button>' +
       quote +
       '<div class="g-id"><span class="id-chip"><code>' + code + '</code>' +
@@ -378,6 +384,7 @@ function cardHtml(d, now) {
     : '<button class="btn soft-danger" type="button" data-act="ban" data-code="' + h(d.code) + '">Ban perangkat</button>';
   return (
     '<div class="card-head">' +
+      '<div class="ident-wrap">' + (d.image ? '<img class="device-thumb" src="' + h(d.image) + '" alt="' + h(d.name) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : "") +
       '<div class="ident"><div class="name-row"><h3 class="name">' + h(d.name) + '</h3>' +
       '<button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button></div>' +
@@ -385,7 +392,7 @@ function cardHtml(d, now) {
       '<button class="copy-btn" type="button" data-act="copy" data-code="' + h(d.code) + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></span></div>' +
       '<p class="presence">' + presence + banned + '</p>' +
       (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p>' : '') +
-    '</div>' +
+      '</div></div>' +
       ringHtml(r, d.online) +
     '</div>' +
     '<dl class="specs">' +

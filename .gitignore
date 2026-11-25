@@ -14,3 +14,4 @@ key.properties
 # junk
 *.log
 .DS_Store
+node_modules/
