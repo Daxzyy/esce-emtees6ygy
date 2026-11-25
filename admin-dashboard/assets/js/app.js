@@ -399,13 +399,13 @@ function cardHtml(d, now) {
       '<div class="name-block"><h3 class="name">' + h(d.name) + '</h3>' + (d.model ? '<div class="model">' + h(d.model) + '</div>' : '') +
       '<div class="meta-row"><button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button>' + presence + banned + '</div></div></div>' +
-      '<div class="code">ID <span class="id-chip"><code>' + h(d.code) + '</code>' +
-      '<button class="copy-btn" type="button" data-act="copy" data-code="' + h(d.code) + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></span></div>' +
       (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p>' : '') +
       '</div>' +
       ringHtml(r, d.online) +
     '</div>' +
     '<dl class="specs">' +
+      '<div class="spec-id"><dt>' + ICON_FINGER + 'ID perangkat</dt><dd class="id-val"><code>' + h(d.code) + '</code>' +
+      '<button class="copy-btn" type="button" data-act="copy" data-code="' + h(d.code) + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></dd></div>' +
       '<div><dt>' + ICON_CPU + 'Chipset</dt><dd>' + dash(chipsetName(r)) + '</dd></div>' +
       '<div><dt>' + ICON_STORAGE + 'RAM / Storage</dt><dd>' + h(fmtRam(r.totalRamMB)) + ' / ' + h(fmtStorage(r.totalStorageGB)) + '</dd></div>' +
       '<div><dt>' + ICON_ANDROID + 'Android</dt><dd>' + h(androidText(r)) + '</dd></div>' +
@@ -748,6 +748,7 @@ const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 const ICON_SUN = '<svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 const ICON_MOON = '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>';
 const ICON_GRID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>';
+const ICON_FINGER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v3a6 6 0 01-1.5 4M8 12a4 4 0 018 0v1.5c0 2.2-.4 4-1.2 5.5M5 12a7 7 0 0114 0M5 12v2.5M19 12v1M8.5 20.5c.8-1.2 1.3-2.4 1.5-4"/></svg>';
 const ICON_CPU = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></svg>';
 const ICON_STORAGE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>';
 const ICON_ANDROID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17V11a7 7 0 0114 0v6a1 1 0 01-1 1H6a1 1 0 01-1-1zM8 4l1.5 2.5M16 4l-1.5 2.5"/><path d="M9.5 11h.01M14.5 11h.01"/></svg>';
