@@ -306,7 +306,56 @@ function fallbackCopy(text) {
   } catch (e) { return false; }
 }
 
+// Kartu mode grid: baterai jadi "air" bergelombang di belakang angka persen.
+const WAVE_D = "M0 6 Q25 0 50 6 T100 6 T150 6 T200 6 V12 H0Z";
+function gridCardHtml(d, now) {
+  const r = d.r;
+  const b = fmtBattery(r);
+  let tone;
+  if (d.banned) tone = "ban";
+  else if (!b.has) tone = "none";
+  else if (!d.online) tone = b.cls === "low" ? "low" : "off";
+  else tone = b.cls === "charging" ? "chg" : b.cls === "low" ? "low" : "on";
+  const water = b.has
+    ? '<div class="g-water" style="height:' + b.pct + '%">' +
+        '<svg class="g-wave" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden="true"><path d="' + WAVE_D + '"/></svg>' +
+        '<svg class="g-wave w2" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden="true"><path d="' + WAVE_D + '"/></svg>' +
+      '</div>'
+    : "";
+  const status = d.banned ? ICON_LOCK + "Banned" : '<span class="gd"></span>' + (d.online ? "Online" : "Offline");
+  const sub = d.online
+    ? (b.has ? b.label : "Belum ada data baterai")
+    : (d.ls ? "Terlihat " + fmtDate(d.ls, now).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase()) : "Belum pernah terlihat");
+  const code = h(d.code);
+  const quote = d.banned
+    ? '<button class="g-q' + (d.banMsg ? '' : ' empty') + '" type="button" data-act="banmsg" data-code="' + code + '" aria-label="Edit pesan ban" title="Edit pesan ban">' +
+      h(d.banMsg ? "\u201c" + d.banMsg + "\u201d" : "Tanpa pesan custom") + '</button>'
+    : "";
+  const act = d.banned
+    ? '<button class="un" type="button" data-act="unban" data-code="' + code + '" aria-label="Unban perangkat" title="Unban perangkat">' + ICON_CHECK + '</button>'
+    : '<button class="bn" type="button" data-act="ban" data-code="' + code + '" aria-label="Ban perangkat" title="Ban perangkat">' + ICON_BAN + '</button>';
+  return (
+    '<div class="g-hero ' + tone + '">' + water +
+      '<div class="g-pct">' + (b.has ? b.pct + '<small>%</small>' + (b.cls === "charging" ? ICON_BOLT : "") : "\u2013") + '</div>' +
+      '<div class="g-st">' + status + '</div>' +
+      '<div class="g-sub">' + h(sub) + '</div>' +
+    '</div>' +
+    '<div class="g-bd">' +
+      '<h3 class="name">' + h(d.name) + '</h3>' +
+      '<button class="g-owner' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + code + '" aria-label="Edit label pemilik" title="Edit label pemilik">' + h(d.owner || "+ Tambah label") + '</button>' +
+      quote +
+      '<div class="g-id"><span class="id-chip"><code>' + code + '</code>' +
+        '<button class="copy-btn" type="button" data-act="copy" data-code="' + code + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></span></div>' +
+    '</div>' +
+    '<div class="g-ac">' +
+      '<button type="button" data-act="history" data-code="' + code + '" aria-label="Riwayat pesan ban" title="Riwayat pesan ban">' + ICON_HISTORY + '</button>' +
+      act +
+    '</div>'
+  );
+}
+
 function cardHtml(d, now) {
+  if (gridMode) return gridCardHtml(d, now);
   const r = d.r;
   const presence = d.online
     ? '<span class="badge online"><span class="dot"></span>Online</span>'
@@ -392,7 +441,7 @@ function render() {
 
   reconcile(listEl, shown.map(d => ({
     code: d.code,
-    cls: "card" + (d.banned ? " is-banned" : ""),
+    cls: "card" + (d.banned ? " is-banned" : "") + (gridMode ? " g-card" : ""),
     html: cardHtml(d, now)
   })));
 
@@ -677,6 +726,9 @@ const ICON_GRID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>';
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const ICON_HISTORY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>';
+const ICON_BAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';
+const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
+const ICON_BOLT = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
 const ICON_LOGOUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>';
 
 const ICON_EYE = '<svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -728,6 +780,7 @@ function showDash() {
     store.set("ujian_admin_grid", gridMode ? "1" : "0");
     this.setAttribute("aria-pressed", String(gridMode));
     qs("#list").classList.toggle("grid2", gridMode);
+    render();
   });
   qs("#theme").addEventListener("click", toggleTheme);
   qs("#logout").addEventListener("click", logout);

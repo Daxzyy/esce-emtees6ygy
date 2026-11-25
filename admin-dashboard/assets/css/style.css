@@ -320,18 +320,7 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 /* ===== Mode grid: 2 kartu per baris (tombol kotak jendela di topbar) ===== */
 .icon-btn[aria-pressed="true"] { background: var(--text); color: var(--bg); }
 .list.grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-@media (max-width: 560px) {
-  .list.grid2 .card { padding: 12px; gap: 10px; border-radius: 16px; }
-  .list.grid2 .card-head { flex-direction: column; align-items: stretch; gap: 8px; }
-  .list.grid2 .ring-wrap { order: -1; width: auto; align-self: center; }
-  .list.grid2 .ring { width: 56px; height: 56px; }
-  .list.grid2 .ring .pct { font-size: 13px; }
-  .list.grid2 .name { font-size: 15px; }
-  .list.grid2 .owner-chip, .list.grid2 .ban-msg-chip { max-width: 100%; font-size: 12px; padding: 2px 9px; }
-  .list.grid2 .specs { grid-template-columns: 1fr; gap: 8px; }
-  .list.grid2 .specs dd { font-size: 13px; }
-  .list.grid2 .card-foot .btn { min-height: 42px; font-size: 13px; border-radius: 12px; }
-}
+@media (min-width: 561px) { .list.grid2 { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
 
 /* ===== Tombol salin ID: menyatu dengan chip ID (satu kotak, ikon di ujung kanan) ===== */
 .id-chip {
@@ -356,7 +345,6 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .card-foot .btn.hist-btn { flex: none; width: 48px; padding: 0; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
 .card-foot .btn.hist-btn svg { width: 20px; height: 20px; }
 .card-foot .btn.hist-btn:hover { color: var(--text); }
-.list.grid2 .card-foot .btn.hist-btn { width: 42px; }
 .hist-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; overscroll-behavior: contain; }
 .hist-item { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
 .hist-item.now { border-color: var(--danger-text); }
@@ -399,3 +387,50 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 :root[data-theme="light"] .seg button[aria-pressed="true"] { background: var(--primary); color: #fff; }
 :root[data-theme="light"] .icon-btn[aria-pressed="true"] { background: var(--primary); color: #fff; }
 :root[data-theme="light"] .name { color: var(--text); }
+
+/* ===== Mode grid: kartu "hero baterai" (angka persen di atas air bergelombang) ===== */
+.card.g-card { padding: 0; gap: 0; border-radius: 16px; overflow: hidden; }
+.g-hero {
+  --wc: color-mix(in srgb, var(--text) 14%, var(--surface));
+  position: relative; height: 76px; overflow: hidden;
+  background: color-mix(in srgb, var(--text) 6%, var(--surface));
+}
+.g-hero.chg { --wc: color-mix(in srgb, var(--live) 38%, var(--surface)); }
+.g-hero.low { --wc: color-mix(in srgb, var(--danger) 38%, var(--surface)); }
+.g-hero.off { --wc: color-mix(in srgb, var(--muted) 20%, var(--surface)); }
+.g-hero.ban { --wc: color-mix(in srgb, var(--danger) 34%, var(--surface)); background: color-mix(in srgb, var(--danger) 14%, var(--surface)); }
+.g-water { position: absolute; left: 0; right: 0; bottom: 0; background: var(--wc); }
+.g-wave { position: absolute; left: 0; top: -9px; width: 200%; height: 10px; fill: var(--wc); animation: g-wave 4s linear infinite; }
+.g-wave.w2 { top: -12px; opacity: .55; animation-duration: 6.5s; animation-direction: reverse; }
+@keyframes g-wave { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .g-wave { animation: none; } }
+.g-pct { position: absolute; left: 12px; top: 8px; display: flex; align-items: center; gap: 3px; font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text); }
+.g-pct small { font-size: 14px; font-weight: 700; }
+.g-pct svg { width: 14px; height: 14px; color: var(--ok); }
+.g-st { position: absolute; right: 10px; top: 11px; display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--text); }
+.g-st svg { width: 12px; height: 12px; }
+.g-st .gd { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.g-hero.on .gd, .g-hero.chg .gd { background: var(--live); }
+.g-hero.off .g-pct, .g-hero.off .g-st { color: var(--muted); }
+.g-hero.ban .g-pct, .g-hero.ban .g-st { color: var(--danger-text); }
+.g-sub { position: absolute; left: 12px; right: 10px; bottom: 7px; font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-hero.ban .g-sub { color: var(--danger-text); }
+.g-bd { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 10px 12px 12px; }
+.g-bd .name { margin: 0; font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-owner, .g-q { display: block; max-width: 100%; padding: 0; border: 0; background: none; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.g-owner { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-owner.empty, .g-q.empty { font-weight: 500; opacity: .8; }
+.g-owner:hover, .g-q:hover { text-decoration: underline; }
+.g-q { margin-top: 2px; color: var(--danger-text); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.g-id { margin-top: 6px; display: flex; min-width: 0; }
+.g-id .id-chip { max-width: 100%; min-width: 0; }
+.g-id .id-chip code { min-width: 0; padding: 4px 8px; font-size: 11px; background: transparent; border: 0; border-radius: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-ac { display: flex; border-top: 1px solid var(--border); }
+.g-ac button { flex: 1; height: 44px; display: grid; place-items: center; border: 0; border-radius: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.g-ac button + button { border-left: 1px solid var(--border); }
+.g-ac button svg { width: 19px; height: 19px; }
+.g-ac button:hover { background: var(--surface-2); color: var(--text); }
+.g-ac .bn, .g-ac .bn:hover { color: var(--danger-text); }
+.g-ac .un, .g-ac .un:hover { background: var(--ok); color: #fff; }
+.g-ac .un:hover { filter: brightness(1.08); }
+:root .card.is-banned.g-card { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--danger) 55%, transparent); }

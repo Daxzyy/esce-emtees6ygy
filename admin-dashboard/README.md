@@ -43,3 +43,4 @@ terpengaruh jam HP yang salah. Dashboard membandingkannya dengan jam server kala
   Kalau password diganti, login yang tersimpan otomatis tidak berlaku lagi.
 
 - Tema terang memakai konsep Warm Neutral / Soft Minimalist (cream, ivory, muted brown, earth tone). Semua warna lewat token CSS di `assets/css/style.css`; tema gelap tidak berubah.
+- Mode grid memakai kartu "hero baterai": persen baterai di atas latar air bergelombang (level = persen, warna ikut status), aksi hanya riwayat + ban/unban, tombol salin menempel di kanan ID.
