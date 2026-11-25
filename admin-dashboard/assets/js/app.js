@@ -585,6 +585,45 @@ document.addEventListener("click", e => {
 
 function findDevice(code) { return devices.find(d => d.code === code); }
 
+const BAN_TEMPLATES = [
+  { label: "Indikasi kecurangan", text: "⚠️ 𝗜𝗻𝗱𝗶𝗸𝗮𝘀𝗶 𝗞𝗲𝗰𝘂𝗿𝗮𝗻𝗴𝗮𝗻 𝗧𝗲𝗿𝗱𝗲𝘁𝗲𝗸𝘀𝗶\n\nSistem mendeteksi adanya aktivitas mencurigakan selama ujian berlangsung. Aktivitas ini terindikasi sebagai pelanggaran terhadap ketentuan ujian dan telah tercatat dalam sistem pengawasan." },
+  { label: "Pemeriksaan perangkat", text: "🔍 𝗣𝗲𝗺𝗲𝗿𝗶𝗸𝘀𝗮𝗮𝗻 𝗣𝗲𝗿𝗮𝗻𝗴𝗸𝗮𝘁 𝗕𝗲𝗿𝗹𝗮𝗻𝗴𝘀𝘂𝗻𝗴\n\nSistem sedang melakukan pemeriksaan terhadap aktivitas perangkat untuk memastikan lingkungan ujian berjalan sesuai dengan ketentuan yang berlaku." },
+  { label: "Peringatan sesi", text: "⚠️ 𝗣𝗲𝗿𝗶𝗻𝗴𝗮𝘁𝗮𝗻 𝗦𝗲𝘀𝗶 𝗨𝗷𝗶𝗮𝗻\n\nHarap tetap berada di halaman ujian dan hindari aktivitas lain selama pengerjaan berlangsung. Seluruh aktivitas perangkat dapat tercatat dalam sistem pengawasan." },
+  { label: "Status pengawasan", text: "🔒 𝗦𝘁𝗮𝘁𝘂𝘀 𝗣𝗲𝗻𝗴𝗮𝘄𝗮𝘀𝗮𝗻 𝗔𝗸𝘁𝗶𝗳\n\nPerangkat Anda saat ini berada dalam pemantauan sistem. Pastikan seluruh aktivitas tetap sesuai dengan prosedur pelaksanaan ujian." },
+  { label: "Pencatatan selesai", text: "📋 𝗣𝗲𝗻𝗰𝗮𝘁𝗮𝘁𝗮𝗻 𝗔𝗸𝘁𝗶𝘃𝗶𝘁𝗮𝘀 𝗦𝗲𝗹𝗲𝘀𝗮𝗶\n\nSistem telah menyelesaikan pencatatan aktivitas selama sesi berlangsung. Data tersimpan sebagai bagian dari dokumentasi pengawasan ujian." },
+  { label: "Di luar halaman", text: "🚨 𝗔𝗸𝘀𝗲𝘀 𝗱𝗶 𝗟𝘂𝗮𝗿 𝗛𝗮𝗹𝗮𝗺𝗮𝗻 𝗨𝗷𝗶𝗮𝗻\n\nTerdeteksi adanya perpindahan aktivitas dari halaman ujian. Pastikan Anda tidak meninggalkan aplikasi selama proses pengerjaan berlangsung." },
+  { label: "Validasi sesi", text: "ℹ️ 𝗩𝗮𝗹𝗶𝗱𝗮𝘀𝗶 𝗦𝗲𝘀𝗶 𝗨𝗷𝗶𝗮𝗻\n\nSistem sedang memverifikasi status sesi dan lingkungan perangkat. Mohon tunggu hingga proses validasi selesai." },
+  { label: "Perlu tinjauan", text: "⚠️ 𝗦𝘁𝗮𝘁𝘂𝘀 𝗔𝗸𝘁𝗶𝘃𝗶𝘁𝗮𝘀 𝗠𝗲𝗺𝗲𝗿𝗹𝘂𝗸𝗮𝗻 𝗧𝗶𝗻𝗷𝗮𝘂𝗮𝗻\n\nTerdapat aktivitas yang memerlukan pemeriksaan lebih lanjut. Informasi terkait telah disimpan untuk keperluan evaluasi pengawasan." }
+];
+
+function tplFieldHtml(current) {
+  const idx = BAN_TEMPLATES.findIndex(t => t.text === current);
+  const legacy = !!current && idx < 0;
+  const sel = legacy ? "old" : String(idx);
+  const chip = (key, label) => '<button class="tpl-chip' + (sel === key ? ' on' : '') + '" type="button" data-i="' + key + '" aria-pressed="' + (sel === key) + '">' + h(label) + '</button>';
+  const chips = chip("-1", "Default") + BAN_TEMPLATES.map((t, i) => chip(String(i), t.label)).join("") + (legacy ? chip("old", "Pesan saat ini") : "");
+  const value = legacy ? current : idx >= 0 ? BAN_TEMPLATES[idx].text : "";
+  return '<div class="field"><span>Template pesan</span><div class="tpl-row" id="m-tpls">' + chips + '</div>' +
+    '<textarea class="input" id="m-msg" rows="7" readonly placeholder="Pesan default aplikasi akan ditampilkan.">' + h(value) + '</textarea></div>';
+}
+
+function bindTemplates(current) {
+  const box = qs("#m-tpls");
+  const area = qs("#m-msg");
+  if (!box || !area) return;
+  box.addEventListener("click", e => {
+    const b = e.target.closest(".tpl-chip");
+    if (!b) return;
+    const k = b.dataset.i;
+    area.value = k === "-1" ? "" : k === "old" ? current : BAN_TEMPLATES[Number(k)].text;
+    box.querySelectorAll(".tpl-chip").forEach(c => {
+      const on = c === b;
+      c.classList.toggle("on", on);
+      c.setAttribute("aria-pressed", String(on));
+    });
+  });
+}
+
 function openBan(code) {
   const d = findDevice(code);
   const name = d ? deviceName(d) : code;
@@ -594,8 +633,7 @@ function openBan(code) {
     okText: "Ban",
     body:
       '<p>Ban <strong>' + h(name) + '</strong> (ID <code>' + h(code) + '</code>)? Device akan langsung terkunci saat ujian.</p>' +
-      '<label class="field"><span>Pesan ban (opsional)</span>' +
-      '<textarea class="input" id="m-msg" rows="3" maxlength="300" placeholder="Kosongkan untuk pakai pesan default"></textarea></label>',
+      tplFieldHtml(""),
     onConfirm: async () => {
       const message = qs("#m-msg").value.trim();
       await jf(BANS + "/" + encodeURIComponent(code) + ".json", {
@@ -609,6 +647,7 @@ function openBan(code) {
       refresh();
     }
   });
+  bindTemplates("");
 }
 
 function openOwner(code) {
@@ -646,8 +685,7 @@ function openBanMsg(code) {
     okText: "Simpan",
     body:
       '<p>Pesan ban untuk <strong>' + h(name) + '</strong> (ID <code>' + h(code) + '</code>).</p>' +
-      '<label class="field"><span>Pesan ban</span>' +
-      '<textarea class="input" id="m-msg" rows="3" maxlength="300" placeholder="Kosongkan untuk pakai pesan default">' + h(d ? d.banMsg : "") + '</textarea></label>',
+      tplFieldHtml(d ? d.banMsg : ""),
     onConfirm: async () => {
       const message = qs("#m-msg").value.trim();
       await jf(BANS + "/" + encodeURIComponent(code) + ".json", {
@@ -661,6 +699,7 @@ function openBanMsg(code) {
       refresh();
     }
   });
+  bindTemplates(d ? d.banMsg : "");
 }
 
 // Riwayat pesan ban custom: /ban_history/{kode}/{pushId} = { message, at, type }

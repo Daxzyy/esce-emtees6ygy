@@ -102,6 +102,10 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 }
 .input:focus { outline: 2px solid var(--primary); outline-offset: 0; border-color: transparent; }
 textarea.input { resize: vertical; min-height: 84px; }
+textarea.input[readonly] { resize: none; cursor: default; background: var(--surface-2); line-height: 1.5; min-height: 150px; }
+.tpl-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.tpl-chip { font: inherit; font-size: 12.5px; padding: 5px 11px; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: var(--text); cursor: pointer; }
+.tpl-chip.on { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); font-weight: 600; }
 .login-card .btn { width: 100%; padding: 11px 14px; }
 .login-card .field { margin-bottom: 6px; }
 .pw-wrap { position: relative; margin-bottom: 14px; }
