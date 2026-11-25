@@ -1,23 +1,25 @@
 /* ===== Tokens (light default, dark via [data-theme="dark"]) ===== */
 :root {
-  --bg: #edf0f3;
-  --surface: #ffffff;
-  --surface-2: #f5f7f9;
-  --border: #dfe5ea;
-  --text: #14212b;
-  --muted: #4a5b68;
-  --primary: #0b7a6b;
-  --primary-ink: #ffffff;
-  --ok: #0b6b5d;
-  --ok-bg: #d8f3ec;
-  --danger: #b3261e;
-  --danger-ink: #ffffff;
-  --danger-bg: #fadad7;
-  --danger-text: #9b1c14;
-  --track: #e3e8ec;
-  --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .06);
-  --shadow-lg: 0 20px 50px rgba(15, 23, 42, .25);
-  --overlay: rgba(15, 23, 42, .5);
+  /* Light: Warm Neutral / Soft Minimalist (cream, ivory, muted brown, earth tone) */
+  --bg: #f1eadd;
+  --surface: #fbf8f1;
+  --surface-2: #f5eee1;
+  --border: #e3d8c5;
+  --text: #3a2e25;
+  --muted: #6f5f50;
+  --primary: #8b5e3c;
+  --primary-ink: #fffaf0;
+  --ok: #5b6b3a;
+  --ok-bg: #e5e8cf;
+  --danger: #a4432d;
+  --danger-ink: #fffaf0;
+  --danger-bg: #f3ddd0;
+  --danger-text: #8c3a26;
+  --track: #e6dbc7;
+  --live: #7f9a4e;
+  --shadow: 0 1px 2px rgba(90, 62, 38, .07), 0 2px 8px rgba(90, 62, 38, .05);
+  --shadow-lg: 0 20px 50px rgba(70, 46, 28, .22);
+  --overlay: rgba(58, 46, 37, .45);
   --radius: 16px;
   color-scheme: light;
 }
@@ -36,6 +38,7 @@
   --danger-bg: #43201d;
   --danger-text: #ffaaa2;
   --track: #263543;
+  --live: #22c55e;
   --shadow: 0 1px 2px rgba(0, 0, 0, .4);
   --shadow-lg: 0 20px 50px rgba(0, 0, 0, .6);
   --overlay: rgba(0, 0, 0, .65);
@@ -86,7 +89,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 }
 .brand-mark {
   width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
-  background: var(--primary); color: #fff; flex: none;
+  background: var(--primary); color: var(--primary-ink); flex: none;
 }
 .brand-mark svg { width: 22px; height: 22px; }
 .login-card h1 { margin: 16px 0 4px; font-size: 20px; }
@@ -127,9 +130,9 @@ textarea.input { resize: vertical; min-height: 84px; }
 .brand-text small { display: block; color: var(--muted); font-size: 12px; }
 .top-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .conn { display: flex; align-items: center; gap: 8px; margin-top: 2px; font-size: 13px; color: var(--muted); }
-.live-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 0 rgba(34, 197, 94, .55); animation: live-blink 1.4s ease-in-out infinite; }
+.live-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--live); box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 55%, transparent); animation: live-blink 1.4s ease-in-out infinite; }
 .conn.err .live-dot { background: var(--danger-text); box-shadow: none; animation: none; }
-@keyframes live-blink { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, .55); } 50% { opacity: .35; box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } }
+@keyframes live-blink { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 55%, transparent); } 50% { opacity: .35; box-shadow: 0 0 0 6px transparent; } }
 .conn.err { color: var(--danger-text); }
 .icon-btn { padding: 8px; }
 .icon-btn.sq { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 14px; background: var(--surface); color: var(--text); }
@@ -291,7 +294,7 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 }
 
 /* ===== Feedback tap: flash + ring memudar (kelas .tap-fx dipasang oleh JS) ===== */
-:root { --ring-c: rgba(11, 122, 107, .5); --ring-danger: rgba(179, 38, 30, .45); }
+:root { --ring-c: rgba(139, 94, 60, .45); --ring-danger: rgba(164, 67, 45, .4); }
 :root[data-theme="dark"] { --ring-c: rgba(47, 184, 162, .55); --ring-danger: rgba(229, 88, 77, .5); }
 .btn.soft-danger, .btn.danger { --ring-c: var(--ring-danger); }
 @keyframes tapfx {
@@ -371,3 +374,12 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .modal.center.single .modal-actions .btn { flex: none; min-width: 96px; }
 @keyframes popin { from { transform: scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .modal.center { animation: none; } }
+
+/* ===== Light mode: permukaan ivory dilembutkan dengan garis tipis + bayangan hangat ===== */
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .stat,
+:root[data-theme="light"] .search .input {
+  box-shadow: 0 0 0 1px var(--border), var(--shadow);
+}
+:root[data-theme="light"] .card.is-banned { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 55%, transparent), 0 0 0 1px var(--border), var(--shadow); }
+:root[data-theme="light"] ::selection { background: #e6d3b8; color: var(--text); }

@@ -41,3 +41,5 @@ terpengaruh jam HP yang salah. Dashboard membandingkannya dengan jam server kala
 ## Catatan
 - Password di `assets/js/app.js` (`PASSWORD`). Ini client-side: bisa dilihat via DevTools. GANTI.
   Kalau password diganti, login yang tersimpan otomatis tidak berlaku lagi.
+
+- Tema terang memakai konsep Warm Neutral / Soft Minimalist (cream, ivory, muted brown, earth tone). Semua warna lewat token CSS di `assets/css/style.css`; tema gelap tidak berubah.
