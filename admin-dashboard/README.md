@@ -14,6 +14,9 @@ Vercel, Root Directory = `admin-dashboard/` (repo publik). Tanpa build step.
   kalau tidak tampil "Terakhir dilihat ..."
 - Auto-refresh data tiap 4 detik tanpa reload. Scroll, search, dan filter tidak reset
   (kartu di-update per device, bukan dirender ulang)
+- Tombol filter (Semua/Online/Offline/Banned) menampilkan jumlah device per kategori.
+- Riwayat pesan ban custom per device: tombol jam di kartu. Tiap ban/edit dengan pesan terisi dicatat
+  ke `/ban_history/{kode}/{pushId}` = `{message, at, type}` (type: `ban` atau `edit`).
 - Ban pakai modal (input pesan opsional), Unban pakai modal konfirmasi.
   Ban menulis `/banned/{kode}` = `{banned: true, message}`, Unban menghapus node itu
 - Tema light/dark (ikut sistem, bisa diganti lewat tombol di header, tersimpan)

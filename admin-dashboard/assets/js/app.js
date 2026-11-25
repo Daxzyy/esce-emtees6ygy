@@ -22,6 +22,7 @@ const ROOT = "https://cihuy-a-default-rtdb.asia-southeast1.firebasedatabase.app"
 const BASE = ROOT + "/devices";
 const BANS = ROOT + "/banned";
 const OWNERS = ROOT + "/owners";
+const BAN_HISTORY = ROOT + "/ban_history";
 const PASSWORD = "banned";
 const AUTH_HEADER = "Basic YWRtaW46YWRtaW4=";
 
@@ -336,7 +337,8 @@ function cardHtml(d, now) {
       '<div><dt>Android</dt><dd>' + h(androidText(r)) + '</dd></div>' +
       '<div><dt>Pertama terlihat</dt><dd>' + h(fmtDate(r.firstSeen, now)) + '</dd></div>' +
     '</dl>' +
-    '<div class="card-foot">' + btn + '</div>'
+    '<div class="card-foot">' + btn +
+      '<button class="btn hist-btn" type="button" data-act="history" data-code="' + h(d.code) + '" aria-label="Riwayat pesan ban" title="Riwayat pesan ban">' + ICON_HISTORY + '</button></div>'
   );
 }
 
@@ -376,6 +378,10 @@ function render() {
   setText("#st-total", all.length);
   setText("#st-online", onlineN);
   setText("#st-banned", bannedN);
+  setText("#ct-all", all.length);
+  setText("#ct-online", onlineN);
+  setText("#ct-offline", all.length - onlineN);
+  setText("#ct-banned", bannedN);
 
   const shown = all.filter(d => matchesFilter(d) && matchesQuery(d));
   shown.sort((a, b) =>
@@ -461,7 +467,7 @@ function openModal(cfg) {
     '<h2 id="m-title">' + h(cfg.title) + '</h2>' + cfg.body +
     '<p class="m-err" id="m-err" hidden></p>' +
     '<div class="modal-actions">' +
-      '<button class="btn ghost" type="button" id="m-cancel">Batal</button>' +
+      '<button class="btn ghost" type="button" id="m-cancel"' + (cfg.noCancel ? ' hidden' : '') + '>Batal</button>' +
       '<button class="btn ' + cfg.cls + '" type="button" id="m-ok">' + h(cfg.okText) + '</button>' +
     '</div></div></div>';
   document.body.classList.add("modal-open");
@@ -523,6 +529,7 @@ function openBan(code) {
         headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify({ banned: true, message })
       });
+      await logBanMsg(code, message, "ban");
       if (d) d.banned = true;
       render();
       refresh();
@@ -574,11 +581,63 @@ function openBanMsg(code) {
         headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify({ banned: true, message })
       });
+      if (!d || d.banMsg !== message) await logBanMsg(code, message, "edit");
       if (d) d.banMsg = message;
       render();
       refresh();
     }
   });
+}
+
+// Riwayat pesan ban custom: /ban_history/{kode}/{pushId} = { message, at, type }
+// Dicatat cuma kalau pesannya diisi; gagal nyatet tidak membatalkan ban-nya.
+async function logBanMsg(code, message, type) {
+  if (!message) return;
+  try {
+    await jf(BAN_HISTORY + "/" + encodeURIComponent(code) + ".json", {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ message, at: nowMs(), type })
+    });
+  } catch (e) { console.error("riwayat pesan ban gagal dicatat", e); }
+}
+
+async function openHistory(code) {
+  const d = findDevice(code);
+  const name = d ? deviceName(d) : code;
+  openModal({
+    title: "Riwayat pesan ban",
+    cls: "ok",
+    okText: "Tutup",
+    noCancel: true,
+    body:
+      '<p>Pesan ban custom untuk <strong>' + h(name) + '</strong> (ID <code>' + h(code) + '</code>).</p>' +
+      '<div class="hist-list" id="m-hist"><p class="hist-empty">Memuat...</p></div>',
+    onConfirm: async () => {}
+  });
+  let items = [];
+  let failed = false;
+  try {
+    const data = await jf(BAN_HISTORY + "/" + encodeURIComponent(code) + ".json");
+    if (data && typeof data === "object") {
+      items = Object.values(data).filter(x => x && typeof x.message === "string");
+    }
+  } catch (e) { failed = true; }
+  const box = qs("#m-hist");
+  if (!box) return; // modal sudah ditutup
+  items.sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0));
+  const now = nowMs();
+  let html = "";
+  if (d && d.banned && d.banMsg) {
+    html += '<div class="hist-item now"><div class="hist-meta"><span class="hist-tag now">Aktif sekarang</span></div>' +
+      '<div class="hist-msg">' + h(d.banMsg) + '</div></div>';
+  }
+  html += items.map(x =>
+    '<div class="hist-item"><div class="hist-meta"><span class="hist-tag">' + (x.type === "edit" ? "Diedit" : "Ban") + '</span>' +
+    '<span>' + h(fmtDate(x.at, now)) + '</span></div><div class="hist-msg">' + h(x.message) + '</div></div>'
+  ).join("");
+  if (!html) html = '<p class="hist-empty">' + (failed ? "Gagal memuat riwayat." : "Belum ada riwayat pesan custom.") + '</p>';
+  box.innerHTML = html;
 }
 
 function openUnban(code) {
@@ -615,6 +674,7 @@ const ICON_MOON = '<svg class="moon" viewBox="0 0 24 24" fill="none" stroke="cur
 const ICON_GRID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>';
 const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>';
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const ICON_HISTORY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>';
 const ICON_LOGOUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>';
 
 const ICON_EYE = '<svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -649,10 +709,10 @@ function showDash() {
       '<section class="toolbar">' +
         '<label class="search">' + ICON_SEARCH + '<input class="input" id="q" type="search" placeholder="Cari nama, ID, atau chipset" autocomplete="off"></label>' +
         '<div class="seg" role="group" aria-label="Filter status">' +
-          '<button type="button" data-filter="all" aria-pressed="true">Semua</button>' +
-          '<button type="button" data-filter="online" aria-pressed="false">Online</button>' +
-          '<button type="button" data-filter="offline" aria-pressed="false">Offline</button>' +
-          '<button type="button" data-filter="banned" aria-pressed="false">Banned</button>' +
+          '<button type="button" data-filter="all" aria-pressed="true">Semua<span class="cnt" id="ct-all">0</span></button>' +
+          '<button type="button" data-filter="online" aria-pressed="false">Online<span class="cnt" id="ct-online">0</span></button>' +
+          '<button type="button" data-filter="offline" aria-pressed="false">Offline<span class="cnt" id="ct-offline">0</span></button>' +
+          '<button type="button" data-filter="banned" aria-pressed="false">Banned<span class="cnt" id="ct-banned">0</span></button>' +
         '</div>' +
       '</section>' +
       '<div class="list' + (gridMode ? ' grid2' : '') + '" id="list"></div>' +
@@ -684,6 +744,7 @@ function showDash() {
     else if (b.dataset.act === "owner") openOwner(b.dataset.code);
     else if (b.dataset.act === "ban") openBan(b.dataset.code);
     else if (b.dataset.act === "banmsg") openBanMsg(b.dataset.code);
+    else if (b.dataset.act === "history") openHistory(b.dataset.code);
     else openUnban(b.dataset.code);
   });
 
