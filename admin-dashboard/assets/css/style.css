@@ -322,20 +322,22 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .list.grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 @media (min-width: 561px) { .list.grid2 { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
 
-/* ===== Tombol salin ID: menyatu dengan chip ID (satu kotak, ikon di ujung kanan) ===== */
+/* ===== Tombol salin ID: ikon kecil di dalam chip ID; hover = kotak mungil membulat, tanpa cincin menyebar ===== */
 .id-chip {
-  display: inline-flex; align-items: stretch; vertical-align: middle; overflow: hidden;
+  display: inline-flex; align-items: center; vertical-align: middle; overflow: hidden;
   background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
 }
-.code .id-chip code { background: transparent; border: 0; border-radius: 0; padding: 2px 8px; }
+.code .id-chip code { background: transparent; border: 0; border-radius: 0; padding: 2px 4px 2px 8px; }
 .copy-btn {
-  display: grid; place-items: center; width: 28px; padding: 0;
-  border: 0; border-left: 1px solid var(--border); border-radius: 0;
-  background: transparent; color: var(--muted); cursor: pointer;
+  flex: none; display: grid; place-items: center; width: 22px; height: 22px; margin: 2px 3px 2px 0; padding: 0;
+  border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer;
+  transition: background .12s, color .12s, scale .12s;
 }
 .copy-btn svg { width: 14px; height: 14px; }
-.copy-btn:hover { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
-.copy-btn.copied { color: var(--ok); }
+.copy-btn:hover { color: var(--text); background: color-mix(in srgb, var(--text) 11%, transparent); }
+.copy-btn:not(:disabled):active { scale: .88 .88; background: color-mix(in srgb, var(--text) 18%, transparent); transition-duration: .06s; }
+.copy-btn.tap-fx { animation: none; }
+.copy-btn.copied, .copy-btn.copied:hover { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
 
 /* ===== Jumlah di tombol kategori: teks polos dalam kurung ===== */
 .seg button .cnt { margin-left: 4px; font-weight: inherit; font-variant-numeric: tabular-nums; opacity: .75; }
@@ -428,7 +430,7 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .g-q { margin-top: 2px; color: var(--danger-text); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .g-id { margin-top: 6px; display: flex; min-width: 0; }
 .g-id .id-chip { max-width: 100%; min-width: 0; }
-.g-id .id-chip code { min-width: 0; padding: 4px 8px; font-size: 11px; background: transparent; border: 0; border-radius: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-id .id-chip code { min-width: 0; padding: 4px 4px 4px 8px; font-size: 11px; background: transparent; border: 0; border-radius: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .g-ac { display: flex; border-top: 1px solid var(--border); }
 .g-ac button { flex: 1; height: 44px; display: grid; place-items: center; border: 0; border-radius: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .g-ac button + button { border-left: 1px solid var(--border); }
@@ -438,3 +440,6 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .g-ac .un, .g-ac .un:hover { background: var(--ok); color: #fff; }
 .g-ac .un:hover { filter: brightness(1.08); }
 :root .card.is-banned.g-card { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--danger) 55%, transparent); }
+
+/* Ikon baterai di kiri angka persen (isinya mengikuti level) */
+.g-bi { flex: none; width: 24px; height: 13px; margin-right: 4px; }

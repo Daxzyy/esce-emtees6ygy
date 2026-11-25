@@ -308,6 +308,14 @@ function fallbackCopy(text) {
 
 // Kartu mode grid: baterai jadi "air" bergelombang di belakang angka persen.
 const WAVE_D = "M0 10 Q25 0 50 10 T100 10 T150 10 T200 10 V20 H0Z";
+function battIcon(pct) {
+  const w = pct <= 0 ? 0 : Math.max(1.5, 16 * pct / 100);
+  return '<svg class="g-bi" viewBox="0 0 26 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">' +
+    '<rect x="1" y="1" width="21" height="12" rx="3.2"/><path d="M24.5 5v4"/>' +
+    (w ? '<rect x="3.5" y="3.5" width="' + w.toFixed(1) + '" height="7" rx="1.4" fill="currentColor" stroke="none"/>' : "") +
+    '</svg>';
+}
+
 function gridCardHtml(d, now) {
   const r = d.r;
   const b = fmtBattery(r);
@@ -336,7 +344,7 @@ function gridCardHtml(d, now) {
     : '<button class="bn" type="button" data-act="ban" data-code="' + code + '" aria-label="Ban perangkat" title="Ban perangkat">' + ICON_BAN + '</button>';
   return (
     '<div class="g-hero ' + tone + '">' + water +
-      '<div class="g-pct">' + (b.has ? b.pct + '<small>%</small>' + (b.cls === "charging" ? ICON_BOLT : "") : "\u2013") + '</div>' +
+      '<div class="g-pct">' + (b.has ? battIcon(b.pct) + b.pct + '<small>%</small>' + (b.cls === "charging" ? ICON_BOLT : "") : "\u2013") + '</div>' +
       '<div class="g-st">' + status + '</div>' +
       '<div class="g-sub">' + h(sub) + '</div>' +
     '</div>' +
