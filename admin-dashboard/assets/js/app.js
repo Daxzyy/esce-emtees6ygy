@@ -378,10 +378,10 @@ function render() {
   setText("#st-total", all.length);
   setText("#st-online", onlineN);
   setText("#st-banned", bannedN);
-  setText("#ct-all", all.length);
-  setText("#ct-online", onlineN);
-  setText("#ct-offline", all.length - onlineN);
-  setText("#ct-banned", bannedN);
+  setText("#ct-all", "(" + all.length + ")");
+  setText("#ct-online", "(" + onlineN + ")");
+  setText("#ct-offline", "(" + (all.length - onlineN) + ")");
+  setText("#ct-banned", "(" + bannedN + ")");
 
   const shown = all.filter(d => matchesFilter(d) && matchesQuery(d));
   shown.sort((a, b) =>
@@ -463,7 +463,7 @@ function openModal(cfg) {
   lastFocus = document.activeElement;
   const root = qs("#modal-root");
   root.innerHTML =
-    '<div class="backdrop"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">' +
+    '<div class="backdrop' + (cfg.center ? ' center' : '') + '"><div class="modal' + (cfg.center ? ' center' : '') + '" role="dialog" aria-modal="true" aria-labelledby="m-title">' +
     '<h2 id="m-title">' + h(cfg.title) + '</h2>' + cfg.body +
     '<p class="m-err" id="m-err" hidden></p>' +
     '<div class="modal-actions">' +
@@ -607,6 +607,7 @@ async function openHistory(code) {
   const name = d ? deviceName(d) : code;
   openModal({
     title: "Riwayat pesan ban",
+    center: true,
     cls: "ok",
     okText: "Tutup",
     noCancel: true,
@@ -709,10 +710,10 @@ function showDash() {
       '<section class="toolbar">' +
         '<label class="search">' + ICON_SEARCH + '<input class="input" id="q" type="search" placeholder="Cari nama, ID, atau chipset" autocomplete="off"></label>' +
         '<div class="seg" role="group" aria-label="Filter status">' +
-          '<button type="button" data-filter="all" aria-pressed="true">Semua<span class="cnt" id="ct-all">0</span></button>' +
-          '<button type="button" data-filter="online" aria-pressed="false">Online<span class="cnt" id="ct-online">0</span></button>' +
-          '<button type="button" data-filter="offline" aria-pressed="false">Offline<span class="cnt" id="ct-offline">0</span></button>' +
-          '<button type="button" data-filter="banned" aria-pressed="false">Banned<span class="cnt" id="ct-banned">0</span></button>' +
+          '<button type="button" data-filter="all" aria-pressed="true">Semua<span class="cnt" id="ct-all">(0)</span></button>' +
+          '<button type="button" data-filter="online" aria-pressed="false">Online<span class="cnt" id="ct-online">(0)</span></button>' +
+          '<button type="button" data-filter="offline" aria-pressed="false">Offline<span class="cnt" id="ct-offline">(0)</span></button>' +
+          '<button type="button" data-filter="banned" aria-pressed="false">Banned<span class="cnt" id="ct-banned">(0)</span></button>' +
         '</div>' +
       '</section>' +
       '<div class="list' + (gridMode ? ' grid2' : '') + '" id="list"></div>' +
