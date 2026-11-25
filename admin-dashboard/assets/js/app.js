@@ -114,31 +114,24 @@ function fmtClock(ms) {
 }
 
 /* ===================== Format device ===================== */
-function withModel(name, r) {
+function modelCode(r) {
   const model = valid(r.model) ? String(r.model).trim() : "";
-  if (!model) return name;
-  const key = value => String(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (key(name).includes(key(model))) return name;
+  if (!model) return "";
   const maker = valid(r.manufacturer) ? String(r.manufacturer).trim() : "";
   const parts = model.split(/\s+/);
-  const shown = maker && parts.length > 1 && parts[0].toLowerCase() === maker.toLowerCase()
+  return maker && parts.length > 1 && parts[0].toLowerCase() === maker.toLowerCase()
     ? parts.slice(1).join(" ")
     : model;
-  return name + " (" + shown + ")";
 }
 
 function deviceName(r) {
-  let name = "";
-  if (valid(r.gsmaName)) {
-    name = String(r.gsmaName).trim();
-  } else {
-    const model = valid(r.model) ? String(r.model).trim() : "";
-    let maker = valid(r.manufacturer) ? String(r.manufacturer).trim() : "";
-    if (maker) maker = maker.charAt(0).toUpperCase() + maker.slice(1);
-    name = model;
-    if (maker && !model.toLowerCase().startsWith(maker.toLowerCase())) name = (maker + " " + model).trim();
-  }
-  return withModel(name || "Device tanpa nama", r);
+  if (valid(r.gsmaName)) return String(r.gsmaName).trim();
+  const model = valid(r.model) ? String(r.model).trim() : "";
+  let maker = valid(r.manufacturer) ? String(r.manufacturer).trim() : "";
+  if (maker) maker = maker.charAt(0).toUpperCase() + maker.slice(1);
+  let name = model;
+  if (maker && !model.toLowerCase().startsWith(maker.toLowerCase())) name = (maker + " " + model).trim();
+  return name || "Device tanpa nama";
 }
 
 function deviceImage(r) {
@@ -285,7 +278,7 @@ function setConn(ok) { connOk = ok; renderConn(); }
 function decorate(r, now) {
   const ls = Number(r.lastSeen) || 0;
   const online = ls > 0 && Math.abs(now - ls) <= ONLINE_MS;
-  return { r, code: r.code, name: deviceName(r), image: deviceImage(r), owner: r.owner || "", ls, online, banned: !!r.banned, banMsg: r.banMsg || "" };
+  return { r, code: r.code, name: deviceName(r), model: modelCode(r), image: deviceImage(r), owner: r.owner || "", ls, online, banned: !!r.banned, banMsg: r.banMsg || "" };
 }
 
 function matchesQuery(d) {
@@ -372,7 +365,7 @@ function gridCardHtml(d, now) {
     '</div>' +
     '<div class="g-bd">' +
       '<div class="g-title">' + (d.image ? '<img class="device-thumb g-thumb" src="' + h(d.image) + '" alt="' + h(d.name) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : "") +
-      '<h3 class="name">' + h(d.name) + '</h3></div>' +
+      '<div class="g-title-text"><h3 class="name">' + h(d.name) + '</h3>' + (d.model ? '<div class="g-model">' + h(d.model) + '</div>' : '') + '</div></div>' +
       '<button class="g-owner' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + code + '" aria-label="Edit label pemilik" title="Edit label pemilik">' + ICON_USER + '<span>' + h(d.owner || "Tambah label") + '</span>' + ICON_PENCIL + '</button>' +
       quote +
       '<div class="g-id"><span class="id-chip"><code>' + code + '</code>' +
@@ -403,7 +396,7 @@ function cardHtml(d, now) {
     '<div class="card-head">' +
       '<div class="ident">' +
       '<div class="name-row">' + (d.image ? '<img class="device-thumb" src="' + h(d.image) + '" alt="' + h(d.name) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : "") +
-      '<h3 class="name">' + h(d.name) + '</h3>' +
+      '<div class="name-block"><h3 class="name">' + h(d.name) + '</h3>' + (d.model ? '<div class="model">' + h(d.model) + '</div>' : '') + '</div>' +
       '<button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button></div>' +
       '<div class="code">ID <span class="id-chip"><code>' + h(d.code) + '</code>' +

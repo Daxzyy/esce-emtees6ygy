@@ -233,7 +233,8 @@ async function resolveDevice(record) {
       gsmaUrl: result.url,
       gsmaModels: result.models,
       gsmaResolvedAt: Date.now(),
-      gsmaCheckedAt: Date.now()
+      gsmaCheckedAt: Date.now(),
+      gsmaMissing: false
     });
   } else {
     await firebasePatch('/devices/' + code, { gsmaCheckedAt: Date.now(), gsmaMissing: true });

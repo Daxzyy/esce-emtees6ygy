@@ -8,7 +8,7 @@ Vercel, Root Directory = `admin-dashboard/` (repo publik). Tanpa build step.
 - Header + ringkasan: Total device, Online, Banned
 - Search (nama, ID, chipset) dan filter Semua / Online / Offline / Banned
 - Daftar device berbentuk card responsif (tanpa scroll horizontal, di HP bertumpuk)
-  - Nama Device = nama resmi GSM Arena + kode model (contoh `Infinix Note 40 (X6853)`), kalau tidak dikenali fallback ke manufacturer + model (contoh `Oppo CPH2269`), ID Device = kode device
+  - Nama Device = nama resmi GSM Arena, model tampil di bawahnya (contoh `Infinix Note 40` / `X6853`); kalau tidak dikenali fallback ke manufacturer + model (contoh `Oppo CPH2269`), ID Device = kode device
   - Gambar HP resmi GSM Arena tampil di kiri nama, ukuran tetap dan tidak terdistorsi
   - Chipset, RAM / Storage, Android (SDK), First seen
 - Status ala WhatsApp: badge **Online** (hijau) kalau `lastSeen` <= 10 detik yang lalu,
