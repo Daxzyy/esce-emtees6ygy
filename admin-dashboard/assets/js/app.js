@@ -114,14 +114,31 @@ function fmtClock(ms) {
 }
 
 /* ===================== Format device ===================== */
-function deviceName(r) {
-  if (valid(r.gsmaName)) return String(r.gsmaName).trim();
+function withModel(name, r) {
   const model = valid(r.model) ? String(r.model).trim() : "";
-  let maker = valid(r.manufacturer) ? String(r.manufacturer).trim() : "";
-  if (maker) maker = maker.charAt(0).toUpperCase() + maker.slice(1);
-  let name = model;
-  if (maker && !model.toLowerCase().startsWith(maker.toLowerCase())) name = (maker + " " + model).trim();
-  return name || "Device tanpa nama";
+  if (!model) return name;
+  const key = value => String(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (key(name).includes(key(model))) return name;
+  const maker = valid(r.manufacturer) ? String(r.manufacturer).trim() : "";
+  const parts = model.split(/\s+/);
+  const shown = maker && parts.length > 1 && parts[0].toLowerCase() === maker.toLowerCase()
+    ? parts.slice(1).join(" ")
+    : model;
+  return name + " (" + shown + ")";
+}
+
+function deviceName(r) {
+  let name = "";
+  if (valid(r.gsmaName)) {
+    name = String(r.gsmaName).trim();
+  } else {
+    const model = valid(r.model) ? String(r.model).trim() : "";
+    let maker = valid(r.manufacturer) ? String(r.manufacturer).trim() : "";
+    if (maker) maker = maker.charAt(0).toUpperCase() + maker.slice(1);
+    name = model;
+    if (maker && !model.toLowerCase().startsWith(maker.toLowerCase())) name = (maker + " " + model).trim();
+  }
+  return withModel(name || "Device tanpa nama", r);
 }
 
 function deviceImage(r) {
@@ -384,15 +401,16 @@ function cardHtml(d, now) {
     : '<button class="btn soft-danger" type="button" data-act="ban" data-code="' + h(d.code) + '">Ban perangkat</button>';
   return (
     '<div class="card-head">' +
-      '<div class="ident-wrap">' + (d.image ? '<img class="device-thumb" src="' + h(d.image) + '" alt="' + h(d.name) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : "") +
-      '<div class="ident"><div class="name-row"><h3 class="name">' + h(d.name) + '</h3>' +
+      '<div class="ident">' +
+      '<div class="name-row">' + (d.image ? '<img class="device-thumb" src="' + h(d.image) + '" alt="' + h(d.name) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : "") +
+      '<h3 class="name">' + h(d.name) + '</h3>' +
       '<button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button></div>' +
       '<div class="code">ID <span class="id-chip"><code>' + h(d.code) + '</code>' +
       '<button class="copy-btn" type="button" data-act="copy" data-code="' + h(d.code) + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></span></div>' +
       '<p class="presence">' + presence + banned + '</p>' +
       (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p>' : '') +
-      '</div></div>' +
+      '</div>' +
       ringHtml(r, d.online) +
     '</div>' +
     '<dl class="specs">' +

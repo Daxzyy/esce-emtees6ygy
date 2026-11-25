@@ -173,9 +173,8 @@ textarea.input { resize: vertical; min-height: 84px; }
 }
 .card.is-banned { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--danger) 55%, transparent); }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.ident { min-width: 0; }
-.ident-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
-.device-thumb { flex: none; width: 48px; height: 48px; object-fit: contain; padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+.ident { min-width: 0; flex: 1; }
+.device-thumb { flex: none; width: 64px; height: 64px; object-fit: contain; padding: 5px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); }
 .name { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
 .name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .owner-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 190px; padding: 3px 11px; border: 1.5px solid var(--primary); border-radius: 999px; background: transparent; color: var(--primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
@@ -237,7 +236,7 @@ textarea.input { resize: vertical; min-height: 84px; }
   .seg { width: 100%; }
   .seg button { flex: 1; padding: 8px 4px; }
   .page { padding: 14px 12px 32px; }
-  .device-thumb { width: 42px; height: 42px; }
+  .device-thumb { width: 56px; height: 56px; }
   .topbar-in { padding: 16px 12px 0; }
   .btn .lbl { display: none; }
   .btn.logout .lbl { display: inline; }
