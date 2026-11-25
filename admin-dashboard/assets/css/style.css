@@ -393,13 +393,14 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 /* ===== Mode grid: kartu "hero baterai" (angka persen di atas air bergelombang) ===== */
 .card.g-card { padding: 0; gap: 0; border-radius: 16px; overflow: hidden; }
 .g-hero {
-  --wc: color-mix(in srgb, var(--text) 24%, var(--surface));
+  --wc: color-mix(in srgb, var(--ok) 30%, var(--surface));
   position: relative; height: 76px; overflow: hidden;
   background: color-mix(in srgb, var(--text) 4%, var(--surface));
 }
 .g-hero.chg { --wc: color-mix(in srgb, var(--live) 55%, var(--surface)); }
 .g-hero.low { --wc: color-mix(in srgb, var(--danger) 45%, var(--surface)); }
-.g-hero.off { --wc: color-mix(in srgb, var(--muted) 24%, var(--surface)); }
+.g-hero.off { --wc: color-mix(in srgb, #8c8c8c 28%, var(--surface)); }
+.g-hero.off .g-wave { animation-play-state: paused; }
 .g-hero.ban { --wc: color-mix(in srgb, var(--danger) 40%, var(--surface)); background: color-mix(in srgb, var(--danger) 12%, var(--surface)); }
 .g-water { z-index: 0; position: absolute; left: 0; right: 0; bottom: 0; background: var(--wc); }
 .g-wave { position: absolute; z-index: 2; left: 0; top: -15px; width: 200%; height: 16px; fill: var(--wc); animation: g-wave 3s linear infinite; }
