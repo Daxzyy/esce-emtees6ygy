@@ -39,6 +39,8 @@ dan tidak dipakai dashboard.
 
 `gsmaImage` boleh diedit manual di Firebase; dashboard memakainya dalam ≤4 detik dan workflow tidak akan menimpa selama `gsmaName` + `gsmaImage` masih terisi. Untuk memaksa resolve ulang, hapus `gsmaName`, `gsmaImage`, `gsmaCheckedAt`, dan `gsmaMissing` pada device itu.
 
+Kalau field tersebut belum sempat ditulis workflow, dashboard memakai `data/gsma-index.json` sebagai fallback (di-load sekali per sesi, tanpa menulis balik ke Firebase). Data manual di Firebase tetap diprioritaskan.
+
 `lastSeen` ditulis app memakai server timestamp Firebase (`{".sv":"timestamp"}`), jadi tidak
 terpengaruh jam HP yang salah. Dashboard membandingkannya dengan jam server kalau header
 `Date` Firebase terbaca, kalau tidak pakai jam browser.

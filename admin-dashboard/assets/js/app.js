@@ -23,6 +23,7 @@ const BASE = ROOT + "/devices";
 const BANS = ROOT + "/banned";
 const OWNERS = ROOT + "/owners";
 const BAN_HISTORY = ROOT + "/ban_history";
+const GSMA_INDEX = "data/gsma-index.json";
 const PASSWORD = "banned";
 const AUTH_HEADER = "Basic YWRtaW46YWRtaW4=";
 
@@ -126,6 +127,8 @@ function modelCode(r) {
 
 function deviceName(r) {
   if (valid(r.gsmaName)) return String(r.gsmaName).trim();
+  const hit = gsmaEntry(r);
+  if (hit && valid(hit.name)) return String(hit.name).trim();
   const model = valid(r.model) ? String(r.model).trim() : "";
   let maker = valid(r.manufacturer) ? String(r.manufacturer).trim() : "";
   if (maker) maker = maker.charAt(0).toUpperCase() + maker.slice(1);
@@ -135,7 +138,9 @@ function deviceName(r) {
 }
 
 function deviceImage(r) {
-  return valid(r.gsmaImage) ? String(r.gsmaImage).trim() : "";
+  if (valid(r.gsmaImage)) return String(r.gsmaImage).trim();
+  const hit = gsmaEntry(r);
+  return hit && valid(hit.image) ? String(hit.image).trim() : "";
 }
 
 function chipsetName(r) {
@@ -219,6 +224,8 @@ let loaded = false;
 let loadError = "";
 let pollTimer = null;
 let tickTimer = null;
+let gsmaIndex = null;
+let gsmaIndexPromise = null;
 const cards = new Map();   // code -> { el, html, cls }
 
 /* ===================== Network ===================== */
@@ -233,13 +240,41 @@ async function jf(u, opts) {
   return r.json();
 }
 
+function loadGsmaIndex() {
+  if (gsmaIndex) return Promise.resolve(gsmaIndex);
+  if (gsmaIndexPromise) return gsmaIndexPromise;
+  gsmaIndexPromise = fetch(GSMA_INDEX)
+    .then(r => r.ok ? r.json() : {})
+    .catch(() => ({}))
+    .then(data => {
+      gsmaIndex = data && typeof data === "object" ? data : {};
+      return gsmaIndex;
+    });
+  return gsmaIndexPromise;
+}
+
+function gsmaEntry(r) {
+  if (!gsmaIndex || typeof gsmaIndex !== "object") return null;
+  const model = String(r.model ?? "").trim();
+  if (!model) return null;
+  const parts = model.split(/\s+/);
+  const keys = [model, parts[parts.length - 1]]
+    .map(v => String(v).toUpperCase().replace(/[^A-Z0-9]/g, ""))
+    .filter(Boolean);
+  for (const key of keys) {
+    const hit = gsmaIndex[key];
+    if (hit && typeof hit === "object") return hit;
+  }
+  return null;
+}
+
 async function refresh() {
   if (inflight || document.hidden || !qs("#list")) return;
   if (!isAuthed()) { showLogin(); return; } // sesi 1 hari habis
   const my = session;
   inflight = true;
   try {
-    const [devs, bans, owners] = await Promise.all([jf(BASE + ".json"), jf(BANS + ".json"), jf(OWNERS + ".json").catch(() => ({}))]);
+    const [devs, bans, owners] = await Promise.all([jf(BASE + ".json"), jf(BANS + ".json"), jf(OWNERS + ".json").catch(() => ({})), loadGsmaIndex()]);
     if (my !== session) return;
     const ownerMap = owners && typeof owners === "object" ? owners : {};
     const banMap = bans && typeof bans === "object" ? bans : {};

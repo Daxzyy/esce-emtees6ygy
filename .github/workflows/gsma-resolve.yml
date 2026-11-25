@@ -1,9 +1,21 @@
 name: GSMArena device resolution
 
 on:
+  push:
+    paths:
+      - ".github/workflows/gsma-resolve.yml"
+      - "admin-dashboard/scripts/**"
+      - "admin-dashboard/data/**"
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gsma-resolve
+  cancel-in-progress: true
 
 jobs:
   resolve:
