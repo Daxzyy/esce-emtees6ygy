@@ -373,7 +373,8 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .tl-tag { flex: none; padding: 0 9px; line-height: 18px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-size: 11px; font-weight: 700; }
 .tl-tag.now { background: var(--danger-bg); border-color: transparent; color: var(--danger-text); }
 .tl-time { font-size: 12px; line-height: 20px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.modal .tl-msg { margin: 0; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+.tl-pre { position: relative; }
+.modal .tl-msg { margin: 0; padding: 8px 34px 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; color: var(--text);
   white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
 .modal p.hist-empty { margin: 0; text-align: center; font-size: 14px; }
@@ -485,3 +486,6 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 
 /* Semua modal: pinch-zoom dimatikan, scroll vertikal tetap jalan */
 .backdrop { touch-action: pan-y; }
+
+/* Tombol salin di pojok kanan atas kotak pesan riwayat */
+.tl-copy { position: absolute; top: 4px; right: 4px; margin: 0; width: 26px; height: 26px; background: var(--surface-2); }

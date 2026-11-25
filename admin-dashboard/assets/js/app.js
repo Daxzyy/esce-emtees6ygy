@@ -344,8 +344,8 @@ function matchesFilter(d) {
   return true;
 }
 
-function copyId(btn) {
-  const text = btn.dataset.code || "";
+function copyId(btn, override) {
+  const text = override !== undefined ? override : (btn.dataset.code || "");
   const done = function () {
     btn.innerHTML = ICON_CHECK;
     btn.classList.add("copied");
@@ -810,7 +810,8 @@ function histItemHtml(label, cls, time, msg) {
     '<span class="tl-dot" aria-hidden="true"></span>' +
     '<div class="tl-meta"><span class="tl-tag' + (cls === 'now' ? ' now' : '') + '">' + h(label) + '</span>' +
     '<span class="tl-time">' + h(time) + '</span></div>' +
-    '<pre class="tl-msg">' + h(msg) + '</pre></div>';
+    '<div class="tl-pre"><pre class="tl-msg">' + h(msg) + '</pre>' +
+    '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div></div>';
 }
 
 async function openHistory(code) {
@@ -858,6 +859,14 @@ async function openHistory(code) {
   }
   box.innerHTML = '<div class="tl">' + html + '</div>';
 }
+
+// Salin teks pesan dari linimasa riwayat
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-copy-msg]");
+  if (!b) return;
+  const pre = b.parentElement.querySelector(".tl-msg");
+  if (pre) copyId(b, pre.textContent);
+});
 
 function openUnban(code) {
   const d = findDevice(code);
