@@ -211,6 +211,9 @@ textarea.input { resize: vertical; min-height: 84px; }
 .specs dt svg { flex: none; width: 14px; height: 14px; }
 .specs .spec-id { grid-column: 1 / -1; }
 .id-val { display: flex; align-items: center; gap: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px !important; }
+.id-val { gap: 1px !important; }
+.id-val .copy-btn { width: 20px; height: 20px; margin: 0; }
+.id-val .copy-btn svg { width: 13px; height: 13px; }
 .id-val code { background: none; border: 0; padding: 0; color: var(--text); font: inherit; }
 .specs dd { margin: 0; font-size: 14px; font-weight: 600; }
 .card-foot { display: flex; margin-top: auto; }
