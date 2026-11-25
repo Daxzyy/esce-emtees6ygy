@@ -463,7 +463,7 @@ function openModal(cfg) {
   lastFocus = document.activeElement;
   const root = qs("#modal-root");
   root.innerHTML =
-    '<div class="backdrop' + (cfg.center ? ' center' : '') + '"><div class="modal' + (cfg.center ? ' center' : '') + '" role="dialog" aria-modal="true" aria-labelledby="m-title">' +
+    '<div class="backdrop' + (cfg.center ? ' center' : '') + '"><div class="modal' + (cfg.center ? ' center' : '') + (cfg.noCancel ? ' single' : '') + '" role="dialog" aria-modal="true" aria-labelledby="m-title">' +
     '<h2 id="m-title">' + h(cfg.title) + '</h2>' + cfg.body +
     '<p class="m-err" id="m-err" hidden></p>' +
     '<div class="modal-actions">' +
@@ -646,6 +646,7 @@ function openUnban(code) {
   const name = d ? deviceName(d) : code;
   openModal({
     title: "Unban device",
+    center: true,
     cls: "ok",
     okText: "Unban",
     body: '<p>Unban <strong>' + h(name) + '</strong> (ID <code>' + h(code) + '</code>)? Device bisa dipakai ujian lagi.</p>',
