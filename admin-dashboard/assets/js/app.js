@@ -570,7 +570,7 @@ function openModal(cfg) {
       err.hidden = false;
     }
   });
-  const first = qs("#m-msg") || ok;
+  const first = qs("input#m-msg") || ok;
   first.focus();
 }
 
