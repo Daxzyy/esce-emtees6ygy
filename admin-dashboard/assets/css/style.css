@@ -391,29 +391,29 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 /* ===== Mode grid: kartu "hero baterai" (angka persen di atas air bergelombang) ===== */
 .card.g-card { padding: 0; gap: 0; border-radius: 16px; overflow: hidden; }
 .g-hero {
-  --wc: color-mix(in srgb, var(--text) 14%, var(--surface));
+  --wc: color-mix(in srgb, var(--text) 24%, var(--surface));
   position: relative; height: 76px; overflow: hidden;
-  background: color-mix(in srgb, var(--text) 6%, var(--surface));
+  background: color-mix(in srgb, var(--text) 4%, var(--surface));
 }
-.g-hero.chg { --wc: color-mix(in srgb, var(--live) 38%, var(--surface)); }
-.g-hero.low { --wc: color-mix(in srgb, var(--danger) 38%, var(--surface)); }
-.g-hero.off { --wc: color-mix(in srgb, var(--muted) 20%, var(--surface)); }
-.g-hero.ban { --wc: color-mix(in srgb, var(--danger) 34%, var(--surface)); background: color-mix(in srgb, var(--danger) 14%, var(--surface)); }
-.g-water { position: absolute; left: 0; right: 0; bottom: 0; background: var(--wc); }
-.g-wave { position: absolute; left: 0; top: -9px; width: 200%; height: 10px; fill: var(--wc); animation: g-wave 4s linear infinite; }
-.g-wave.w2 { top: -12px; opacity: .55; animation-duration: 6.5s; animation-direction: reverse; }
+.g-hero.chg { --wc: color-mix(in srgb, var(--live) 55%, var(--surface)); }
+.g-hero.low { --wc: color-mix(in srgb, var(--danger) 45%, var(--surface)); }
+.g-hero.off { --wc: color-mix(in srgb, var(--muted) 24%, var(--surface)); }
+.g-hero.ban { --wc: color-mix(in srgb, var(--danger) 40%, var(--surface)); background: color-mix(in srgb, var(--danger) 12%, var(--surface)); }
+.g-water { z-index: 0; position: absolute; left: 0; right: 0; bottom: 0; background: var(--wc); }
+.g-wave { position: absolute; z-index: 2; left: 0; top: -15px; width: 200%; height: 16px; fill: var(--wc); animation: g-wave 3s linear infinite; }
+.g-wave.w2 { z-index: 1; top: -19px; fill: color-mix(in srgb, var(--wc) 55%, var(--surface)); animation-duration: 5s; animation-direction: reverse; }
 @keyframes g-wave { to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) { .g-wave { animation: none; } }
-.g-pct { position: absolute; left: 12px; top: 8px; display: flex; align-items: center; gap: 3px; font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text); }
+.g-pct { z-index: 3; position: absolute; left: 12px; top: 8px; display: flex; align-items: center; gap: 3px; font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--text); }
 .g-pct small { font-size: 14px; font-weight: 700; }
 .g-pct svg { width: 14px; height: 14px; color: var(--ok); }
-.g-st { position: absolute; right: 10px; top: 11px; display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--text); }
+.g-st { z-index: 3; position: absolute; right: 10px; top: 11px; display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--text); }
 .g-st svg { width: 12px; height: 12px; }
 .g-st .gd { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
 .g-hero.on .gd, .g-hero.chg .gd { background: var(--live); }
 .g-hero.off .g-pct, .g-hero.off .g-st { color: var(--muted); }
 .g-hero.ban .g-pct, .g-hero.ban .g-st { color: var(--danger-text); }
-.g-sub { position: absolute; left: 12px; right: 10px; bottom: 7px; font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-sub { position: absolute; z-index: 3; left: 12px; right: 10px; bottom: 7px; font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .g-hero.ban .g-sub { color: var(--danger-text); }
 .g-bd { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 10px 12px 12px; }
 .g-bd .name { margin: 0; font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

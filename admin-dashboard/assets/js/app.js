@@ -307,7 +307,7 @@ function fallbackCopy(text) {
 }
 
 // Kartu mode grid: baterai jadi "air" bergelombang di belakang angka persen.
-const WAVE_D = "M0 6 Q25 0 50 6 T100 6 T150 6 T200 6 V12 H0Z";
+const WAVE_D = "M0 10 Q25 0 50 10 T100 10 T150 10 T200 10 V20 H0Z";
 function gridCardHtml(d, now) {
   const r = d.r;
   const b = fmtBattery(r);
@@ -317,9 +317,9 @@ function gridCardHtml(d, now) {
   else if (!d.online) tone = b.cls === "low" ? "low" : "off";
   else tone = b.cls === "charging" ? "chg" : b.cls === "low" ? "low" : "on";
   const water = b.has
-    ? '<div class="g-water" style="height:' + b.pct + '%">' +
-        '<svg class="g-wave" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden="true"><path d="' + WAVE_D + '"/></svg>' +
-        '<svg class="g-wave w2" viewBox="0 0 200 12" preserveAspectRatio="none" aria-hidden="true"><path d="' + WAVE_D + '"/></svg>' +
+    ? '<div class="g-water" style="height:' + (b.pct === 0 ? 0 : Math.max(8, Math.min(88, b.pct))) + '%">' +
+        '<svg class="g-wave w2" viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden="true"><path d="' + WAVE_D + '"/></svg>' +
+        '<svg class="g-wave" viewBox="0 0 200 20" preserveAspectRatio="none" aria-hidden="true"><path d="' + WAVE_D + '"/></svg>' +
       '</div>'
     : "";
   const status = d.banned ? ICON_LOCK + "Banned" : '<span class="gd"></span>' + (d.online ? "Online" : "Offline");
