@@ -571,7 +571,7 @@ function unbindViewport() {
   vvHandler = null;
 }
 
-// Blokir zoom selama modal tertentu terbuka (riwayat ban): pinch, Ctrl+scroll, Ctrl +/-/0.
+// Blokir zoom selama modal apa pun terbuka: pinch, Ctrl+scroll, Ctrl +/-/0.
 let zoomLock = null;
 function lockZoom() {
   if (zoomLock) return;
@@ -627,7 +627,7 @@ function openModal(cfg) {
     '</div></div></div>';
   document.body.classList.add("modal-open");
   bindViewport();
-  if (cfg.noZoom) lockZoom();
+  lockZoom();
 
   const ok = qs("#m-ok");
   const cancel = qs("#m-cancel");
@@ -819,7 +819,6 @@ async function openHistory(code) {
   openModal({
     title: "Riwayat pesan ban",
     center: true,
-    noZoom: true,
     cls: "ok",
     okText: "Tutup",
     noCancel: true,
