@@ -176,9 +176,10 @@ textarea.input { resize: vertical; min-height: 84px; }
 .ident { min-width: 0; flex: 1; }
 .device-thumb { flex: none; width: 64px; height: 64px; object-fit: contain; padding: 5px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); }
 .name { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; }
-.name-block { min-width: 0; }
+.name-block { min-width: 0; flex: 1; }
 .model { margin-top: 2px; color: var(--muted); font-size: 13px; font-weight: 600; line-height: 1.2; }
-.name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.name-row { display: flex; align-items: flex-start; gap: 10px; }
+.meta-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-top: 6px; font-size: 13px; color: var(--muted); }
 .owner-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 190px; padding: 3px 11px; border: 1.5px solid var(--primary); border-radius: 999px; background: transparent; color: var(--primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .owner-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .owner-chip svg { flex: none; width: 13px; height: 13px; }
@@ -204,9 +205,10 @@ textarea.input { resize: vertical; min-height: 84px; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 1.8s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 .presence { margin: 10px 0 0; font-size: 13px; color: var(--muted); min-height: 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.specs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; margin: 0; }
+.specs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; margin: 0; padding-top: 12px; border-top: 1px solid var(--border); }
 .specs > div { min-width: 0; }
-.specs dt { color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 1px; }
+.specs dt { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.specs dt svg { flex: none; width: 14px; height: 14px; }
 .specs dd { margin: 0; font-size: 14px; font-weight: 600; }
 .card-foot { display: flex; margin-top: auto; }
 .card-foot .btn { width: 100%; min-height: 48px; border-radius: 14px; font-size: 15px; font-weight: 700; }
