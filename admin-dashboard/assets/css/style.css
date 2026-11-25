@@ -482,3 +482,6 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .modal.center h2, .modal.center .hist-sub { flex: none; }
 .modal.center .hist-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
 .modal.center .modal-actions { position: static; flex: none; margin-top: 0; padding: 14px 0 0; background: transparent; }
+
+/* Modal riwayat: pinch-zoom dimatikan, scroll vertikal tetap jalan */
+.backdrop.center { touch-action: pan-y; }

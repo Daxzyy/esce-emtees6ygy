@@ -571,10 +571,41 @@ function unbindViewport() {
   vvHandler = null;
 }
 
+// Blokir zoom selama modal tertentu terbuka (riwayat ban): pinch, Ctrl+scroll, Ctrl +/-/0.
+let zoomLock = null;
+function lockZoom() {
+  if (zoomLock) return;
+  const meta = document.querySelector('meta[name="viewport"]');
+  const prev = meta ? meta.getAttribute("content") : null;
+  if (meta) meta.setAttribute("content", "width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no");
+  const stop = e => e.preventDefault();
+  const onTouch = e => { if (e.touches && e.touches.length > 1) e.preventDefault(); };
+  const onWheel = e => { if (e.ctrlKey) e.preventDefault(); };
+  const onKey = e => {
+    if ((e.ctrlKey || e.metaKey) && ["+", "-", "=", "_", "0"].includes(e.key)) e.preventDefault();
+  };
+  const opt = { passive: false };
+  document.addEventListener("gesturestart", stop, opt);
+  document.addEventListener("gesturechange", stop, opt);
+  document.addEventListener("touchmove", onTouch, opt);
+  window.addEventListener("wheel", onWheel, opt);
+  window.addEventListener("keydown", onKey, true);
+  zoomLock = () => {
+    if (meta && prev !== null) meta.setAttribute("content", prev);
+    document.removeEventListener("gesturestart", stop, opt);
+    document.removeEventListener("gesturechange", stop, opt);
+    document.removeEventListener("touchmove", onTouch, opt);
+    window.removeEventListener("wheel", onWheel, opt);
+    window.removeEventListener("keydown", onKey, true);
+  };
+}
+function unlockZoom() { if (zoomLock) { zoomLock(); zoomLock = null; } }
+
 function closeModal() {
   const root = qs("#modal-root");
   if (!root || !root.firstChild) return;
   unbindViewport();
+  unlockZoom();
   root.innerHTML = "";
   document.body.classList.remove("modal-open");
   modalBusy = false;
@@ -596,6 +627,7 @@ function openModal(cfg) {
     '</div></div></div>';
   document.body.classList.add("modal-open");
   bindViewport();
+  if (cfg.noZoom) lockZoom();
 
   const ok = qs("#m-ok");
   const cancel = qs("#m-cancel");
@@ -787,6 +819,7 @@ async function openHistory(code) {
   openModal({
     title: "Riwayat pesan ban",
     center: true,
+    noZoom: true,
     cls: "ok",
     okText: "Tutup",
     noCancel: true,
