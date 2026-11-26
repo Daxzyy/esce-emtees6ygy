@@ -10,7 +10,7 @@
 (function () {
   var t = "light";
   try {
-    t = localStorage.getItem("ujian_admin_theme");
+    t = localStorage.getItem("ujian_admin_theme_v2");
     // Default selalu light (tidak ikut tema sistem); pilihan tersimpan dari tombol tema tetap dipakai
     if (t !== "light" && t !== "dark") t = "light";
   } catch (e) { t = "light"; }

@@ -28,7 +28,7 @@ const PASSWORD = "banned";
 const AUTH_HEADER = "Basic YWRtaW46YWRtaW4=";
 
 const AUTH_KEY = "ujian_admin_auth";
-const THEME_KEY = "ujian_admin_theme";
+const THEME_KEY = "ujian_admin_theme_v2";
 const ONLINE_MS = 10000;   // now - lastSeen <= 10 detik => Online
 const REFRESH_MS = 4000;   // ambil data baru tiap 4 detik
 const TZ = "Asia/Jakarta";
