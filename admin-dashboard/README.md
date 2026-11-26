@@ -40,7 +40,7 @@ dan tidak dipakai dashboard.
 
 `gsmaName`, `gsmaImage`, `gsmaUrl`, `gsmaModels`, `gsmaChipset`, dan `gsmaResolvedAt` ditulis otomatis oleh resolver GSM Arena kalau kode modelnya cocok. Kalau tidak ketemu, field `gsmaMissing` + `gsmaCheckedAt` dipakai supaya tidak scraping ulang selama 7 hari. Index tetap ada di `data/gsma-index.json`, dan workflow `.github/workflows/gsma-resolve.yml` menjalankan backfill tiap 10 menit untuk device lama maupun baru.
 
-`gsmaImage` boleh diedit manual di Firebase; dashboard memakainya dalam ≤4 detik dan workflow tidak akan menimpa selama `gsmaName` + `gsmaImage` masih terisi. Untuk memaksa resolve ulang, hapus `gsmaName`, `gsmaImage`, `gsmaCheckedAt`, dan `gsmaMissing` pada device itu.
+`gsmaImage` boleh diedit manual di Firebase; dashboard memakainya dalam ≤4 detik dan workflow tidak akan menimpa selama `gsmaName` + `gsmaImage` + `gsmaChipset` masih terisi. Untuk memaksa resolve ulang, hapus `gsmaName`, `gsmaImage`, `gsmaChipset`, `gsmaCheckedAt`, dan `gsmaMissing` pada device itu. Kode `I2218` sengaja dikunci ke `vivo iQOO Z9 (China)` dengan Snapdragon 7 Gen 3 di `scripts/gsma-resolver.js` karena GSMArena juga memakai kode itu untuk varian global Dimensity 7200.
 
 Kalau field tersebut belum sempat ditulis workflow, dashboard memakai `data/gsma-index.json` sebagai fallback (di-load sekali per sesi, tanpa menulis balik ke Firebase). Data manual di Firebase tetap diprioritaskan.
 

@@ -19306,15 +19306,14 @@
     "brand": "vivo"
   },
   "I2218": {
-    "name": "vivo iQOO Z9",
-    "image": "https://fdn2.gsmarena.com/vv/bigpic/vivo-iqoo-z9.jpg",
-    "url": "https://m.gsmarena.com/vivo_iqoo_z9-12865.php",
+    "name": "vivo iQOO Z9 (China)",
+    "image": "https://fdn2.gsmarena.com/vv/bigpic/vivo-iqoo-z9-cn.jpg",
+    "url": "https://m.gsmarena.com/vivo_iqoo_z9_%28china%29-ampp-12959.php",
     "models": [
-      "I2302",
-      "I2218"
+      "V2361A"
     ],
     "brand": "vivo",
-    "chipset": "Mediatek Dimensity 7200 (4 nm)"
+    "chipset": "Qualcomm SM7550-AB Snapdragon 7 Gen 3 (4 nm)"
   },
   "VIVOIQOOZ9": {
     "name": "vivo iQOO Z9",

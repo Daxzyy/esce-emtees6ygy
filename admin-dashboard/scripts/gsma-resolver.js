@@ -10,6 +10,15 @@ const UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, 
 const INDEX_FILE = path.join(__dirname, '..', 'data', 'gsma-index.json');
 const CHECK_TTL = 7 * 24 * 60 * 60 * 1000;
 const MAX_DETAILS = Number(process.env.GSMA_MAX_DETAILS || 1200);
+const MODEL_OVERRIDES = {
+  I2218: {
+    name: 'vivo iQOO Z9 (China)',
+    image: 'https://fdn2.gsmarena.com/vv/bigpic/vivo-iqoo-z9-cn.jpg',
+    url: BASE + '/vivo_iqoo_z9_%28china%29-ampp-12959.php',
+    models: ['V2361A'],
+    chipset: 'Qualcomm SM7550-AB Snapdragon 7 Gen 3 (4 nm)'
+  }
+};
 
 const http = axios.create({
   baseURL: BASE,
@@ -198,6 +207,8 @@ function candidateQueries(model) {
 }
 
 async function resolveModel(model, maker) {
+  const override = MODEL_OVERRIDES[normalize(model)];
+  if (override) return normalizeResult(Object.assign({}, override, { found: true }));
   const queries = candidateQueries(model);
   const query = queries[0];
   if (!query) return { found: false, name: null, image: null, url: null, models: [], chipset: null };
