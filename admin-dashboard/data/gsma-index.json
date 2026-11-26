@@ -28362,5 +28362,16 @@
       "M2460W1"
     ],
     "brand": "xiaomi"
+  },
+  "PIXEL5": {
+    "name": "Google Pixel 5",
+    "image": "https://fdn2.gsmarena.com/vv/bigpic/google-pixel-5-5g.jpg",
+    "url": "https://m.gsmarena.com/google_pixel_5-10386.php",
+    "models": [
+      "GD1YQ",
+      "GTT9Q",
+      "G5NZ6"
+    ],
+    "brand": "google"
   }
 }

@@ -2,7 +2,7 @@
 Dashboard statis untuk memantau dan mem-ban device ujian lewat Firebase RTDB.
 
 ## Deploy
-Vercel, Root Directory = `admin-dashboard/` (repo publik). Tanpa build step.
+Vercel, Root Directory = `admin-dashboard/` (repo publik). Tanpa build step. Scraper tidak berjalan di Vercel; Vercel hanya menyajikan file statis termasuk `data/gsma-index.json`. Resolver jalan di GitHub Actions.
 
 ## Fitur
 - Header + ringkasan: Total device, Online, Banned

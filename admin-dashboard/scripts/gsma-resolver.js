@@ -148,7 +148,8 @@ async function fetchPhone(link) {
 }
 
 function matchScore(phone, query) {
-  if (phone.models.some(model => normalize(model) === query)) return 3;
+  if (phone.models.some(model => normalize(model) === query)) return 4;
+  if (normalize(phone.name).endsWith(query)) return 3;
   if (query.length >= 4 && phone.models.some(model => normalize(model).includes(query))) return 2;
   if (query.length >= 4 && normalize(phone.name).includes(query)) return 1;
   return 0;
@@ -169,7 +170,7 @@ async function deepResolve(model, maker) {
     const phone = await fetchPhone(link);
     checked++;
     const score = matchScore(phone, query);
-    if (score === 3) return phone;
+    if (score >= 3) return phone;
     if (score && !best) best = phone;
   }
   return best;
@@ -205,7 +206,15 @@ async function resolveModel(model, maker) {
       phone = normalizeResult(index[candidate]);
       if (phone && phone.name) break;
     }
-    if (!phone || !phone.name) phone = await deepResolve(queries[queries.length - 1], maker);
+    if (!phone || !phone.name) {
+      for (const candidate of queries) {
+        if (candidate.length < 2) continue;
+        const deep = await deepResolve(candidate, maker);
+        if (!deep || !deep.name) continue;
+        if (matchScore(deep, candidate) >= 3) { phone = deep; break; }
+        if (!phone) phone = deep;
+      }
+    }
     return phone && phone.name
       ? Object.assign({}, phone, { found: true })
       : { found: false, name: null, image: null, url: null, models: [] };
