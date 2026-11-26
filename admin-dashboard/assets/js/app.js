@@ -553,7 +553,10 @@ document.addEventListener("focusin", e => {
   if (!e.target.closest || !e.target.closest(".backdrop") || !/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
   kbFocus = true;
   if (vvHandler) vvHandler(); else { const bd = qs(".backdrop"); if (bd) bd.classList.add("kb"); }
-  setTimeout(() => e.target.scrollIntoView && e.target.scrollIntoView({ block: "nearest" }), 250);
+  setTimeout(() => {
+    const act = qs(".backdrop .modal-actions");
+    (act || e.target).scrollIntoView({ block: "nearest" });
+  }, 250);
 });
 document.addEventListener("focusout", () => {
   setTimeout(() => {
