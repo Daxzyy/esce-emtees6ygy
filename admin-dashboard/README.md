@@ -23,7 +23,7 @@ Vercel, Root Directory = `admin-dashboard/` (repo publik). Tanpa build step.
   "Aktif sekarang" (digabung dengan entri terbaru kalau pesannya sama, tidak dobel).
 - Ban pakai modal (input pesan opsional), Unban pakai modal konfirmasi.
   Ban menulis `/banned/{kode}` = `{banned: true, message}`, Unban menghapus node itu
-- Tema light/dark (ikut sistem, bisa diganti lewat tombol di header, tersimpan)
+- Tema light/dark (default light, bisa diganti lewat tombol di header, tersimpan)
 - Login: ada tombol lihat/sembunyikan password. Setelah password benar, sesi tersimpan di
   `localStorage` dan berlaku **1 hari**, lewat itu otomatis diminta login lagi.
   Tombol **Logout** menghapus sesi lebih awal
