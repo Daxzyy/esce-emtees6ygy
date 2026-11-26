@@ -547,6 +547,24 @@ let modalBusy = false;
 // Modal ikut ukuran viewport visual: waktu keyboard HP muncul, backdrop menyusut ke area
 // di atas keyboard sehingga modal selalu kelihatan dan menempel di atasnya.
 let vvHandler = null;
+// Fokus di input/textarea dalam modal = anggap keyboard terbuka (cadangan kalau visualViewport tidak berubah)
+let kbFocus = false;
+document.addEventListener("focusin", e => {
+  if (!e.target.closest || !e.target.closest(".backdrop") || !/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+  kbFocus = true;
+  if (vvHandler) vvHandler(); else { const bd = qs(".backdrop"); if (bd) bd.classList.add("kb"); }
+  setTimeout(() => e.target.scrollIntoView && e.target.scrollIntoView({ block: "nearest" }), 250);
+});
+document.addEventListener("focusout", () => {
+  setTimeout(() => {
+    const a = document.activeElement;
+    if (a && a.closest && a.closest(".backdrop") && /^(INPUT|TEXTAREA)$/.test(a.tagName)) return;
+    kbFocus = false;
+    const bd = qs(".backdrop");
+    if (vvHandler) vvHandler(); else if (bd) bd.classList.remove("kb");
+  }, 100);
+});
+
 function bindViewport() {
   const vv = window.visualViewport;
   if (!vv) return;
@@ -557,6 +575,8 @@ function bindViewport() {
     bd.style.left = vv.offsetLeft + "px";
     bd.style.width = vv.width + "px";
     bd.style.height = vv.height + "px";
+    // Keyboard layar terbuka: viewport visual jauh lebih pendek dari layout viewport
+    bd.classList.toggle("kb", window.innerHeight - vv.height > 120 || kbFocus);
   };
   vv.addEventListener("resize", vvHandler);
   vv.addEventListener("scroll", vvHandler);

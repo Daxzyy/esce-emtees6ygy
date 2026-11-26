@@ -489,3 +489,8 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 
 /* Tombol salin di pojok kanan atas kotak pesan riwayat */
 .tl-copy { position: absolute; top: 4px; right: 4px; margin: 0; width: 26px; height: 26px; background: var(--surface-2); }
+
+/* Keyboard terbuka: tombol aksi ikut mengalir tepat di bawah textarea (tidak menimpa), modal rata atas */
+.backdrop.kb { place-items: start center; overflow-y: auto; }
+.backdrop.kb .modal { max-height: 100%; overflow-y: auto; padding-bottom: 18px; }
+.backdrop.kb .modal-actions { position: static; margin-top: 12px; padding: 0; background: transparent; }
