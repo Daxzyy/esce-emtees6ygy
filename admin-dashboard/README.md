@@ -10,7 +10,7 @@ Vercel, Root Directory = `admin-dashboard/` (repo publik). Tanpa build step. Scr
 - Daftar device berbentuk card responsif (tanpa scroll horizontal, di HP bertumpuk)
   - Nama Device = nama resmi GSM Arena, model tampil di bawahnya (contoh `Infinix Note 40` / `X6853`); kalau tidak dikenali fallback ke manufacturer + model (contoh `Oppo CPH2269`), ID Device = kode device
   - Gambar HP resmi GSM Arena tampil di kiri nama, ukuran tetap dan tidak terdistorsi
-  - Chipset, RAM / Storage, Android (SDK), First seen
+  - Chipset dari GSMArena (`gsmaChipset`), RAM / Storage, Android (SDK), First seen
 - Status ala WhatsApp: badge **Online** (hijau) kalau `lastSeen` <= 10 detik yang lalu,
   kalau tidak tampil "Terakhir dilihat ..."
 - Auto-refresh data tiap 4 detik tanpa reload. Scroll, search, dan filter tidak reset
@@ -38,7 +38,7 @@ Zona Asia/Jakarta, tanpa garis miring: `Hari ini 14.32`, `Kemarin 09.10`,
 Field `deviceName` (nama bikinan user dari pengaturan HP) sudah tidak dikirim lagi oleh app
 dan tidak dipakai dashboard.
 
-`gsmaName`, `gsmaImage`, `gsmaUrl`, `gsmaModels`, dan `gsmaResolvedAt` ditulis otomatis oleh resolver GSM Arena kalau kode modelnya cocok. Kalau tidak ketemu, field `gsmaMissing` + `gsmaCheckedAt` dipakai supaya tidak scraping ulang selama 7 hari. Index tetap ada di `data/gsma-index.json`, dan workflow `.github/workflows/gsma-resolve.yml` menjalankan backfill tiap 10 menit untuk device lama maupun baru.
+`gsmaName`, `gsmaImage`, `gsmaUrl`, `gsmaModels`, `gsmaChipset`, dan `gsmaResolvedAt` ditulis otomatis oleh resolver GSM Arena kalau kode modelnya cocok. Kalau tidak ketemu, field `gsmaMissing` + `gsmaCheckedAt` dipakai supaya tidak scraping ulang selama 7 hari. Index tetap ada di `data/gsma-index.json`, dan workflow `.github/workflows/gsma-resolve.yml` menjalankan backfill tiap 10 menit untuk device lama maupun baru.
 
 `gsmaImage` boleh diedit manual di Firebase; dashboard memakainya dalam ≤4 detik dan workflow tidak akan menimpa selama `gsmaName` + `gsmaImage` masih terisi. Untuk memaksa resolve ulang, hapus `gsmaName`, `gsmaImage`, `gsmaCheckedAt`, dan `gsmaMissing` pada device itu.
 

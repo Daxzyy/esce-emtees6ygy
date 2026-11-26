@@ -13,6 +13,7 @@ const MAX_DETAILS = Number(process.env.GSMA_MAX_DETAILS || 1200);
 
 const http = axios.create({
   baseURL: BASE,
+  family: 4,
   timeout: 30000,
   headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.9' }
 });
@@ -144,7 +145,9 @@ async function fetchPhone(link) {
     .map(part => part.trim())
     .filter(Boolean);
 
-  return { name, image, url: link.url, models };
+  const chipset = $('[data-spec="chipset"]').first().text().trim().replace(/\s+/g, ' ') || null;
+
+  return { name, image, url: link.url, models, chipset };
 }
 
 function matchScore(phone, query) {
@@ -183,7 +186,8 @@ function normalizeResult(entry) {
     name: entry.name || null,
     image: entry.image || null,
     url: entry.url || null,
-    models: Array.isArray(entry.models) ? entry.models : []
+    models: Array.isArray(entry.models) ? entry.models : [],
+    chipset: entry.chipset || null
   };
 }
 
@@ -196,7 +200,7 @@ function candidateQueries(model) {
 async function resolveModel(model, maker) {
   const queries = candidateQueries(model);
   const query = queries[0];
-  if (!query) return { found: false, name: null, image: null, url: null, models: [] };
+  if (!query) return { found: false, name: null, image: null, url: null, models: [], chipset: null };
   if (inflight.has(query)) return inflight.get(query);
 
   const job = (async () => {
@@ -217,7 +221,7 @@ async function resolveModel(model, maker) {
     }
     return phone && phone.name
       ? Object.assign({}, phone, { found: true })
-      : { found: false, name: null, image: null, url: null, models: [] };
+      : { found: false, name: null, image: null, url: null, models: [], chipset: null };
   })();
 
   inflight.set(query, job);
@@ -241,6 +245,7 @@ async function resolveDevice(record) {
       gsmaImage: result.image,
       gsmaUrl: result.url,
       gsmaModels: result.models,
+      gsmaChipset: result.chipset,
       gsmaResolvedAt: Date.now(),
       gsmaCheckedAt: Date.now(),
       gsmaMissing: false

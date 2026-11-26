@@ -19,7 +19,11 @@ async function main() {
 
   for (const row of rows) {
     const checked = Number(row.gsmaCheckedAt || 0);
-    if ((row.gsmaName && row.gsmaImage) || (checked && Date.now() - checked < CHECK_TTL)) {
+    if (row.gsmaName && row.gsmaImage && row.gsmaChipset) {
+      skipped++;
+      continue;
+    }
+    if (checked && Date.now() - checked < CHECK_TTL && row.gsmaMissing) {
       skipped++;
       continue;
     }

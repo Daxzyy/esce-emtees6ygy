@@ -159,6 +159,9 @@ function deviceImage(r) {
 }
 
 function chipsetName(r) {
+  if (valid(r.gsmaChipset)) return String(r.gsmaChipset).trim();
+  const hit = gsmaEntry(r);
+  if (hit && valid(hit.chipset)) return String(hit.chipset).trim();
   if (valid(r.chipset)) return String(r.chipset).trim();
   if (valid(r.socModel)) return String(r.socModel).trim();
   if (valid(r.hardware)) return String(r.hardware).trim();

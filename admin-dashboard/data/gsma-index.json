@@ -1280,7 +1280,8 @@
     "models": [
       "X6532"
     ],
-    "brand": "infinix"
+    "brand": "infinix",
+    "chipset": "Mediatek Helio G81"
   },
   "INFINIXSMART9": {
     "name": "Infinix Smart 9",
@@ -1299,7 +1300,8 @@
       "X6882",
       "X6882B"
     ],
-    "brand": "infinix"
+    "brand": "infinix",
+    "chipset": "Mediatek Helio G100 (6 nm)"
   },
   "X6882B": {
     "name": "Infinix Hot 50 4G",
@@ -1553,7 +1555,8 @@
     "models": [
       "X6853"
     ],
-    "brand": "infinix"
+    "brand": "infinix",
+    "chipset": "Mediatek Helio G99 Ultimate"
   },
   "INFINIXNOTE40": {
     "name": "Infinix Note 40",
@@ -2035,7 +2038,8 @@
     "models": [
       "X6831"
     ],
-    "brand": "infinix"
+    "brand": "infinix",
+    "chipset": "Mediatek MT6769H Helio G88 (12 nm)"
   },
   "INFINIXHOT30": {
     "name": "Infinix Hot 30",
@@ -2053,7 +2057,8 @@
     "models": [
       "X6827"
     ],
-    "brand": "infinix"
+    "brand": "infinix",
+    "chipset": "Mediatek MT6781 Helio G96 (12 nm)"
   },
   "INFINIXHOT20S": {
     "name": "Infinix Hot 20S",
@@ -4278,7 +4283,8 @@
       "IN2021",
       "IN2025"
     ],
-    "brand": "oneplus"
+    "brand": "oneplus",
+    "chipset": "Qualcomm SM8250 Snapdragon 865 5G (7 nm+)"
   },
   "IN2013": {
     "name": "OnePlus 8",
@@ -9648,7 +9654,8 @@
     "models": [
       "CPH2269"
     ],
-    "brand": "oppo"
+    "brand": "oppo",
+    "chipset": "Mediatek MT6765G Helio G35 (12 nm)"
   },
   "OPPOA16": {
     "name": "Oppo A16",
@@ -12975,7 +12982,8 @@
     "models": [
       "RMX3231"
     ],
-    "brand": "realme"
+    "brand": "realme",
+    "chipset": "Unisoc SC9863A (28 nm)"
   },
   "REALMEC112021": {
     "name": "Realme C11 (2021)",
@@ -15512,7 +15520,8 @@
     "models": [
       "LH8n"
     ],
-    "brand": "tecno"
+    "brand": "tecno",
+    "chipset": "Mediatek Dimensity 6080 (6 nm)"
   },
   "TECNOPOVA5PRO": {
     "name": "Tecno Pova 5 Pro",
@@ -17977,7 +17986,8 @@
       "V2531",
       "V2547"
     ],
-    "brand": "vivo"
+    "brand": "vivo",
+    "chipset": "Unisoc T7225 (12 nm)"
   },
   "V2547": {
     "name": "vivo Y04",
@@ -19303,7 +19313,8 @@
       "I2302",
       "I2218"
     ],
-    "brand": "vivo"
+    "brand": "vivo",
+    "chipset": "Mediatek Dimensity 7200 (4 nm)"
   },
   "VIVOIQOOZ9": {
     "name": "vivo iQOO Z9",
@@ -19862,7 +19873,8 @@
       "V2254",
       "V2252"
     ],
-    "brand": "vivo"
+    "brand": "vivo",
+    "chipset": "Mediatek MT6765 Helio P35 (12 nm)"
   },
   "V2252": {
     "name": "vivo Y02t",
@@ -20807,7 +20819,8 @@
       "V2204",
       "V2214"
     ],
-    "brand": "vivo"
+    "brand": "vivo",
+    "chipset": "Mediatek MT6765 Helio P35 (12 nm)"
   },
   "V2214": {
     "name": "vivo Y16",
@@ -22267,7 +22280,8 @@
     "models": [
       "V2111"
     ],
-    "brand": "vivo"
+    "brand": "vivo",
+    "chipset": "Mediatek MT6765 Helio P35 (12 nm)"
   },
   "VIVOY212021": {
     "name": "vivo Y21 (2021)",
@@ -27891,7 +27905,8 @@
       "25078RA3EL",
       "25078RA3EY"
     ],
-    "brand": "xiaomi"
+    "brand": "xiaomi",
+    "chipset": "Mediatek Helio G81 Ultra (12 nm)"
   },
   "XIAOMIREDMI15C4G": {
     "name": "Xiaomi Redmi 15C 4G",
@@ -28203,7 +28218,8 @@
       "25028RN03Y",
       "25028RN03L"
     ],
-    "brand": "xiaomi"
+    "brand": "xiaomi",
+    "chipset": "Unisoc T7250 (12 nm)"
   },
   "25028RN03A": {
     "name": "Xiaomi Redmi A5",
@@ -28372,6 +28388,17 @@
       "GTT9Q",
       "G5NZ6"
     ],
-    "brand": "google"
+    "brand": "google",
+    "chipset": "Qualcomm SM7250 Snapdragon 765G 5G (7 nm)"
+  },
+  "V2310": {
+    "name": "vivo Y17s",
+    "image": "https://fdn2.gsmarena.com/vv/bigpic/vivo-y17s.jpg",
+    "url": "https://m.gsmarena.com/vivo_y17s-12568.php",
+    "models": [
+      "V2310"
+    ],
+    "brand": "vivo",
+    "chipset": "Mediatek MT6769 Helio G85 (12 nm)"
   }
 }
