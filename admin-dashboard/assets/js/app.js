@@ -683,9 +683,18 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !modalBusy) closeModal();
 });
 
+// Tutup modal lewat klik di luar HANYA kalau tekanan dimulai di backdrop juga. Kalau tidak, ketukan di textarea
+// yang bikin keyboard muncul (layout bergeser) bisa mendarat di backdrop dan menutup modal tanpa sengaja.
+let pressOnBackdrop = false;
+const isBackdrop = t => !!(t && t.classList && t.classList.contains("backdrop"));
+["pointerdown", "mousedown", "touchstart"].forEach(ev =>
+  document.addEventListener(ev, e => { pressOnBackdrop = isBackdrop(e.target); }, true));
 document.addEventListener("click", e => {
-  const bd = e.target;
-  if (bd && bd.classList && bd.classList.contains("backdrop") && !modalBusy) closeModal();
+  if (!isBackdrop(e.target) || !pressOnBackdrop || modalBusy) return;
+  pressOnBackdrop = false;
+  // Keyboard sedang terbuka: ketuk di luar cukup menutup keyboard, bukan modalnya
+  if (kbFocus) { const a = document.activeElement; if (a && a.blur) a.blur(); return; }
+  closeModal();
 });
 
 function findDevice(code) { return devices.find(d => d.code === code); }
