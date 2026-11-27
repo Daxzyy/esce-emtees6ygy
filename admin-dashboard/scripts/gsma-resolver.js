@@ -17,6 +17,20 @@ const MODEL_OVERRIDES = {
     url: BASE + '/vivo_iqoo_z9_%28china%29-ampp-12959.php',
     models: ['V2361A'],
     chipset: 'Qualcomm SM7550-AB Snapdragon 7 Gen 3 (4 nm)'
+  },
+  V2131: {
+    name: 'vivo Y21t',
+    image: 'https://fdn2.gsmarena.com/vv/bigpic/vivo-y21s.jpg',
+    url: BASE + '/vivo_y21t-11294.php',
+    models: ['V2131', 'V2135'],
+    chipset: 'Qualcomm SM6225 Snapdragon 680 4G (6 nm)'
+  },
+  TECNOLI7: {
+    name: 'Tecno Pova 6',
+    image: 'https://fdn2.gsmarena.com/vv/bigpic/tecno-pova-6.jpg',
+    url: BASE + '/tecno_pova_6-12910.php',
+    models: ['LI7'],
+    chipset: 'Mediatek Helio G99 Ultimate (6 nm)'
   }
 };
 
@@ -159,6 +173,16 @@ async function fetchPhone(link) {
   return { name, image, url: link.url, models, chipset };
 }
 
+async function fillChipset(phone) {
+  if (!phone || !phone.url || phone.chipset) return phone;
+  try {
+    const detail = await fetchPhone({ label: phone.name, url: phone.url });
+    return detail.chipset ? Object.assign({}, phone, { chipset: detail.chipset }) : phone;
+  } catch (error) {
+    return phone;
+  }
+}
+
 function matchScore(phone, query) {
   if (phone.models.some(model => normalize(model) === query)) return 4;
   if (normalize(phone.name).endsWith(query)) return 3;
@@ -221,6 +245,7 @@ async function resolveModel(model, maker) {
       phone = normalizeResult(index[candidate]);
       if (phone && phone.name) break;
     }
+    if (phone && phone.name && !phone.chipset) phone = await fillChipset(phone);
     if (!phone || !phone.name) {
       for (const candidate of queries) {
         if (candidate.length < 2) continue;

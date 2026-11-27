@@ -1685,7 +1685,8 @@
     "models": [
       "X6837"
     ],
-    "brand": "infinix"
+    "brand": "infinix",
+    "chipset": "Mediatek Helio G99 (6 nm)"
   },
   "INFINIXHOT40PRO": {
     "name": "Infinix Hot 40 Pro",
@@ -1694,7 +1695,8 @@
     "models": [
       "X6837"
     ],
-    "brand": "infinix"
+    "brand": "infinix",
+    "chipset": "Mediatek Helio G99 (6 nm)"
   },
   "X6836": {
     "name": "Infinix Hot 40",
@@ -7278,7 +7280,8 @@
       "CPH2641",
       "CPH2773"
     ],
-    "brand": "oppo"
+    "brand": "oppo",
+    "chipset": "Qualcomm SM-6115 Snapdragon 6s 4G Gen1 (11 nm)"
   },
   "CPH2773": {
     "name": "Oppo A3x 4G",
@@ -7288,7 +7291,8 @@
       "CPH2641",
       "CPH2773"
     ],
-    "brand": "oppo"
+    "brand": "oppo",
+    "chipset": "Qualcomm SM-6115 Snapdragon 6s 4G Gen1 (11 nm)"
   },
   "OPPOA3X4G": {
     "name": "Oppo A3x 4G",
@@ -7298,7 +7302,8 @@
       "CPH2641",
       "CPH2773"
     ],
-    "brand": "oppo"
+    "brand": "oppo",
+    "chipset": "Qualcomm SM-6115 Snapdragon 6s 4G Gen1 (11 nm)"
   },
   "OPPOWATCHX2MINI": {
     "name": "Oppo Watch X2 Mini",
@@ -19635,7 +19640,8 @@
     "models": [
       "V2322"
     ],
-    "brand": "vivo"
+    "brand": "vivo",
+    "chipset": "Qualcomm SM6225 Snapdragon 680 4G (6 nm)"
   },
   "VIVOY27S": {
     "name": "vivo Y27s",
@@ -19644,7 +19650,8 @@
     "models": [
       "V2322"
     ],
-    "brand": "vivo"
+    "brand": "vivo",
+    "chipset": "Qualcomm SM6225 Snapdragon 680 4G (6 nm)"
   },
   "VIVOT2": {
     "name": "vivo T2",
@@ -28399,5 +28406,26 @@
     ],
     "brand": "vivo",
     "chipset": "Mediatek MT6769 Helio G85 (12 nm)"
+  },
+  "V2131": {
+    "name": "vivo Y21t",
+    "image": "https://fdn2.gsmarena.com/vv/bigpic/vivo-y21s.jpg",
+    "url": "https://m.gsmarena.com/vivo_y21t-11294.php",
+    "models": [
+      "V2131",
+      "V2135"
+    ],
+    "brand": "vivo",
+    "chipset": "Qualcomm SM6225 Snapdragon 680 4G (6 nm)"
+  },
+  "TECNOLI7": {
+    "name": "Tecno Pova 6",
+    "image": "https://fdn2.gsmarena.com/vv/bigpic/tecno-pova-6.jpg",
+    "url": "https://m.gsmarena.com/tecno_pova_6-12910.php",
+    "models": [
+      "LI7"
+    ],
+    "brand": "tecno",
+    "chipset": "Mediatek Helio G99 Ultimate (6 nm)"
   }
 }
