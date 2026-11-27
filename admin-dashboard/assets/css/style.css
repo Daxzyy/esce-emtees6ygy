@@ -724,3 +724,22 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 }
 .btn.locked svg { width: 18px; height: 18px; flex: none; }
 .g-ac .bn.locked, .g-ac .bn.locked:hover { color: var(--muted); cursor: not-allowed; background: transparent; }
+
+/* Orbit: cahaya berjalan mengelilingi border kartu yang dilindungi */
+@property --orbit { syntax: "<angle>"; inherits: true; initial-value: 0deg; }
+.orbit {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 4;
+  animation: orbit-spin 3.2s linear infinite;
+}
+.orbit::before, .orbit::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: conic-gradient(from var(--orbit), transparent 0deg, transparent 230deg,
+    color-mix(in srgb, var(--primary) 35%, transparent) 290deg, var(--primary) 340deg,
+    color-mix(in srgb, var(--primary) 55%, #fff) 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.orbit::before { padding: 2px; }
+.orbit::after { padding: 7px; filter: blur(5px); opacity: .75; }
+@keyframes orbit-spin { to { --orbit: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .orbit { animation: none; } }

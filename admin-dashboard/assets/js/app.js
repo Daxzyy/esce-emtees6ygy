@@ -495,7 +495,7 @@ function gridCardHtml(d, now) {
 // Device yang tidak boleh di-ban (cuma di frontend). Kalau sudah terlanjur banned, tetap bisa di-unban.
 const PROTECTED_CODES = new Set(["6A9A1051"]);
 const isProtected = d => PROTECTED_CODES.has(d.code) && !d.banned;
-const lockWm = () => '<span class="lock-wm" aria-hidden="true">' + ICON_LOCK + '</span>';
+const lockWm = () => '<span class="orbit" aria-hidden="true"></span><span class="lock-wm" aria-hidden="true">' + ICON_LOCK + '</span>';
 
 function cardHtml(d, now) {
   if (gridMode) return gridCardHtml(d, now);
