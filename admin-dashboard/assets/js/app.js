@@ -505,17 +505,17 @@ function visibleSelectable() {
 }
 
 function updateSelBar() {
-  const fab = qs("#sel-ban");
-  if (!fab) return;
+  const bar = qs("#selbar");
+  if (!bar) return;
+  bar.hidden = !selectMode;
   document.body.classList.toggle("select-mode", selectMode);
   qs("#sel").setAttribute("aria-pressed", String(selectMode));
   const n = selected.size;
-  fab.hidden = !(selectMode && n > 0);
-  fab.textContent = "Ban " + n + " perangkat";
+  setText("#sel-count", n ? n + " dipilih" : "Pilih perangkat");
+  qs("#sel-ban").disabled = n === 0;
   const all = visibleSelectable();
   const allOn = all.length > 0 && all.every(d => selected.has(d.code));
   const sa = qs("#sel-all");
-  sa.hidden = !selectMode;
   sa.textContent = allOn ? "Kosongkan" : "Pilih semua";
   sa.disabled = all.length === 0;
 }
@@ -1467,6 +1467,7 @@ const ICON_HASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
 const ICON_BAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';
 const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_SELECT = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.37 8.88h5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.38 8.88l.75.75 2.25-2.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.37 15.88h5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.38 15.88l.75.75 2.25-2.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 22h6c5 0 7-2 7-7V9c0-5-2-7-7-7H9C4 2 2 4 2 9v6c0 5 2 7 7 7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const ICON_BOLT = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
 const ICON_LOGOUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>';
@@ -1509,18 +1510,23 @@ function showDash() {
           '<button type="button" data-filter="online" aria-pressed="false">Online<span class="cnt" id="ct-online">(0)</span></button>' +
           '<button type="button" data-filter="offline" aria-pressed="false">Offline<span class="cnt" id="ct-offline">(0)</span></button>' +
           '<button type="button" data-filter="banned" aria-pressed="false">Banned<span class="cnt" id="ct-banned">(0)</span></button>' +
-          '<button type="button" id="sel-all" hidden>Pilih semua</button>' +
         '</div>' +
       '</section>' +
       '<div class="list' + (gridMode ? ' grid2' : '') + '" id="list"></div>' +
       '<div class="state" id="state">Memuat data...</div>' +
     '</main>' +
-    '<button class="sel-fab" type="button" id="sel-ban" hidden>Ban</button>';
+    '<div class="cab" id="selbar" hidden>' +
+      '<button class="cab-x" type="button" id="sel-cancel" aria-label="Keluar dari mode pilih" title="Keluar dari mode pilih">' + ICON_X + '</button>' +
+      '<div class="cab-title" id="sel-count">0 dipilih</div>' +
+      '<button class="cab-link" type="button" id="sel-all">Pilih semua</button>' +
+      '<button class="cab-ban" type="button" id="sel-ban" disabled>Ban</button>' +
+    '</div>';
 
   filter = "all"; query = "";
 
   selectMode = false; selected.clear();
   qs("#sel").addEventListener("click", () => setSelectMode(!selectMode));
+  qs("#sel-cancel").addEventListener("click", () => setSelectMode(false));
   qs("#sel-all").addEventListener("click", selectAllVisible);
   qs("#sel-ban").addEventListener("click", openMassBan);
   qs("#ghist").addEventListener("click", openGlobalHistory);

@@ -759,16 +759,6 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .g-card .sel-box { top: 10px; left: 10px; }
 .card.sel-on { position: relative; }
 .icon-btn.sq[aria-pressed="true"]#sel { background: var(--primary); color: var(--primary-ink); }
-.select-mode .page { padding-bottom: 100px; }
-.seg #sel-all { border: 1.5px dashed var(--border); background: transparent; }
-.seg #sel-all[hidden] { display: none; }
-.sel-fab {
-  position: fixed; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40;
-  max-width: 420px; margin: 0 auto; min-height: 52px; border: 0; border-radius: 16px; cursor: pointer;
-  background: var(--danger); color: var(--danger-ink); font: inherit; font-size: 15px; font-weight: 700;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
-}
-.sel-fab[hidden] { display: none; }
 .mb-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
 .mb-chip { padding: 3px 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--border); font-size: 12px; font-weight: 600; }
 .mb-chip.more { color: var(--muted); }
@@ -782,4 +772,26 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 
 /* Pill filter tidak boleh menyempit/patah teksnya; kalau tidak muat, pill pindah baris */
 .seg button { flex: none; white-space: nowrap; }
-.seg #sel-all { margin-left: 0; }
+
+/* Bar aksi kontekstual (mode pilih): menggantikan header selama ada pemilihan, pola Gmail/Drive */
+.cab {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 70; display: flex; align-items: center; gap: 4px;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) max(12px, calc((100vw - 1200px) / 2 + 16px)) 8px;
+  background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: 0 6px 20px rgba(0, 0, 0, .12);
+  animation: cab-in .18s ease-out;
+}
+.cab[hidden] { display: none; }
+@keyframes cab-in { from { transform: translateY(-100%); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cab { animation: none; } }
+.cab-x { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 12px; background: transparent; color: var(--text); cursor: pointer; }
+.cab-x:hover { background: var(--surface-2); }
+.cab-x svg { width: 22px; height: 22px; }
+.cab-title { flex: 1; min-width: 0; padding-left: 4px; font-size: 17px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cab-link { flex: none; min-height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: transparent; color: var(--primary); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.cab-link:hover { background: var(--surface-2); }
+.cab-link:disabled { opacity: .4; cursor: default; }
+.cab-ban { flex: none; min-height: 44px; padding: 0 20px; border: 0; border-radius: 12px; background: var(--danger); color: var(--danger-ink); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.cab-ban:disabled { opacity: .4; cursor: default; }
+
+/* Modal di atas bar aksi: sembunyikan bar selama modal terbuka */
+body.modal-open .cab { display: none; }
