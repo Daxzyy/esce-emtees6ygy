@@ -990,9 +990,11 @@ async function openHistory(code) {
 function ghistItemHtml(item, now, isNew) {
   const d = findDevice(item.code);
   const name = d ? deviceName(d) : item.code;
+  const owner = d && d.owner ? d.owner : "";
   return '<div class="tl-item' + (isNew ? ' is-new' : '') + '">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
-    '<div class="tl-head"><span class="tl-dev">' + h(name) + '</span>' +
+    '<div class="tl-head"><span class="tl-dev">' + h(name) + (owner ? '<span class="tl-owner">&middot; ' + h(owner) + '</span>' : '') + '</span>' +
+    '<code class="tl-code">' + h(item.code) + '</code>' +
     '<span class="tl-tags">' +
     (isNew ? '<span class="tl-tag new">Baru</span>' : '') +
     '<span class="tl-tag">' + h(item.type === "edit" ? "Diedit" : "Ban") + '</span>' +
