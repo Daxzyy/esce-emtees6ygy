@@ -466,6 +466,8 @@ function gridCardHtml(d, now) {
     : "";
   const act = d.banned
     ? '<button class="un" type="button" data-act="unban" data-code="' + code + '" aria-label="Unban perangkat" title="Unban perangkat">' + ICON_CHECK + '</button>'
+    : isProtected(d)
+    ? '<button class="bn locked" type="button" disabled aria-label="Dilindungi" title="Perangkat ini dilindungi, tidak bisa di-ban">' + ICON_LOCK + '</button>'
     : '<button class="bn" type="button" data-act="ban" data-code="' + code + '" aria-label="Ban perangkat" title="Ban perangkat">' + ICON_BAN + '</button>';
   return (
     '<div class="g-hero ' + tone + '">' + water +
@@ -485,9 +487,15 @@ function gridCardHtml(d, now) {
     '<div class="g-ac">' +
       '<button type="button" data-act="history" data-code="' + code + '" aria-label="Riwayat pesan ban" title="Riwayat pesan ban">' + ICON_HISTORY + '</button>' +
       act +
-    '</div>'
+    '</div>' +
+    (isProtected(d) ? lockWm() : "")
   );
 }
+
+// Device yang tidak boleh di-ban (cuma di frontend). Kalau sudah terlanjur banned, tetap bisa di-unban.
+const PROTECTED_CODES = new Set(["6A9A1051"]);
+const isProtected = d => PROTECTED_CODES.has(d.code) && !d.banned;
+const lockWm = () => '<span class="lock-wm" aria-hidden="true">' + ICON_LOCK + '</span>';
 
 function cardHtml(d, now) {
   if (gridMode) return gridCardHtml(d, now);
@@ -505,6 +513,8 @@ function cardHtml(d, now) {
     : '';
   const btn = d.banned
     ? '<button class="btn ok" type="button" data-act="unban" data-code="' + h(d.code) + '">Unban perangkat</button>'
+    : isProtected(d)
+    ? '<button class="btn locked" type="button" disabled title="Perangkat ini dilindungi, tidak bisa di-ban">' + ICON_LOCK + 'Dilindungi</button>'
     : '<button class="btn soft-danger" type="button" data-act="ban" data-code="' + h(d.code) + '">Ban perangkat</button>';
   return (
     '<div class="card-head">' +
@@ -526,7 +536,8 @@ function cardHtml(d, now) {
       '<div><dt>' + ICON_CAL + 'Pertama terlihat</dt><dd>' + h(fmtDate(r.firstSeen, now)) + '</dd></div>' +
     '</dl>' +
     '<div class="card-foot">' + btn +
-      '<button class="btn hist-btn" type="button" data-act="history" data-code="' + h(d.code) + '" aria-label="Riwayat pesan ban" title="Riwayat pesan ban">' + ICON_HISTORY + '</button></div>'
+      '<button class="btn hist-btn" type="button" data-act="history" data-code="' + h(d.code) + '" aria-label="Riwayat pesan ban" title="Riwayat pesan ban">' + ICON_HISTORY + '</button></div>' +
+    (isProtected(d) ? lockWm() : "")
   );
 }
 
@@ -580,7 +591,7 @@ function render() {
 
   reconcile(listEl, shown.map(d => ({
     code: d.code,
-    cls: "card" + (d.banned ? " is-banned" : "") + (gridMode ? " g-card" : ""),
+    cls: "card" + (d.banned ? " is-banned" : "") + (isProtected(d) ? " is-protected" : "") + (gridMode ? " g-card" : ""),
     html: cardHtml(d, now)
   })));
 
@@ -835,6 +846,7 @@ function bindTemplates(current) {
 }
 
 function openBan(code) {
+  if (PROTECTED_CODES.has(code) && !(findDevice(code) || {}).banned) return;
   const d = findDevice(code);
   const name = d ? deviceName(d) : code;
   openModal({
