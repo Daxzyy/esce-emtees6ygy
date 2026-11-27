@@ -772,3 +772,6 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .mb-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
 .mb-chip { padding: 3px 10px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--border); font-size: 12px; font-weight: 600; }
 .mb-chip.more { color: var(--muted); }
+
+/* Tombol Pilih (ban massal) di baris pencarian, sejajar dengan kolom cari */
+.toolbar .sel-btn { flex: none; width: 46px; height: 46px; }

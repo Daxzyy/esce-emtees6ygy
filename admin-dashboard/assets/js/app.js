@@ -1491,7 +1491,6 @@ function showDash() {
       '<div class="brand-text"><strong>List Device</strong><span class="conn" id="conn"></span></div>' +
       '<div class="top-actions">' +
         '<button class="btn icon-btn sq" type="button" id="ghist" aria-label="Riwayat ban semua perangkat" title="Riwayat ban (semua perangkat)">' + ICON_HISTORY + '<span class="badge-count" id="ghist-count" hidden>0</span></button>' +
-        '<button class="btn icon-btn sq" type="button" id="sel" aria-label="Pilih banyak perangkat" aria-pressed="false" title="Pilih banyak (ban massal)">' + ICON_SELECT + '</button>' +
         '<button class="btn icon-btn sq" type="button" id="grid" aria-label="Mode grid" aria-pressed="' + gridMode + '" title="Mode grid">' + ICON_GRID + '</button>' +
         '<button class="btn icon-btn sq" type="button" id="theme" aria-label="Ganti tema" title="Ganti tema">' + ICON_SUN + ICON_MOON + '</button>' +
         '<button class="btn icon-btn sq logout" type="button" id="logout" aria-label="Logout" title="Logout">' + ICON_LOGOUT + '</button>' +
@@ -1505,6 +1504,7 @@ function showDash() {
       '</section>' +
       '<section class="toolbar">' +
         '<label class="search">' + ICON_SEARCH + '<input class="input" id="q" type="search" placeholder="Cari nama, ID, atau chipset" autocomplete="off"></label>' +
+        '<button class="btn icon-btn sq sel-btn" type="button" id="sel" aria-label="Pilih banyak perangkat" aria-pressed="false" title="Pilih banyak (ban massal)">' + ICON_SELECT + '</button>' +
         '<div class="seg" role="group" aria-label="Filter status">' +
           '<button type="button" data-filter="all" aria-pressed="true">Semua<span class="cnt" id="ct-all">(0)</span></button>' +
           '<button type="button" data-filter="online" aria-pressed="false">Online<span class="cnt" id="ct-online">(0)</span></button>' +
