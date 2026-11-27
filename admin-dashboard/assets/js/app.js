@@ -940,9 +940,9 @@ function ghistItemHtml(item, now) {
   const name = d ? deviceName(d) : item.code;
   return '<div class="tl-item">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
-    '<div class="tl-meta"><span class="tl-tag">' + h(item.type === "edit" ? "Diedit" : "Ban") + '</span>' +
-    '<span class="tl-dev">' + h(name) + ' &middot; <code>' + h(item.code) + '</code></span>' +
-    '<span class="tl-time">' + h(fmtShort(item.at, now)) + '</span></div>' +
+    '<div class="tl-head"><span class="tl-dev">' + h(name) + '</span>' +
+    '<span class="tl-tag">' + h(item.type === "edit" ? "Diedit" : "Ban") + '</span></div>' +
+    '<div class="tl-meta"><span class="tl-time">' + h(fmtShort(item.at, now)) + '</span></div>' +
     '<div class="tl-pre"><pre class="tl-msg">' + h(item.message) + '</pre>' +
     '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div></div>';
 }
