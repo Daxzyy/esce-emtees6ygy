@@ -860,6 +860,8 @@ function dismissToast(el) {
   el.addEventListener("animationend", () => el.remove(), { once: true });
 }
 
+const MAX_TOASTS = 4; // batas toast yang boleh nampang bareng, bukan cooldown aksi — biar stack-nya nggak nutupin layar pas event ban/unban datang beruntun
+
 function showToast(kind, title) {
   const root = ensureToastRoot();
   const el = document.createElement("div");
@@ -869,6 +871,12 @@ function showToast(kind, title) {
   el.addEventListener("click", () => dismissToast(el));
   root.appendChild(el);
   el._t = setTimeout(() => dismissToast(el), 4200);
+  // Kalau lagi ada ledakan event (spam ban/unban beruntun), paksa toast paling lama
+  // langsung keluar duluan supaya jumlah yang tampil bareng tetap terbatas.
+  const live = Array.from(root.querySelectorAll(".toast:not(.leaving)"));
+  if (live.length > MAX_TOASTS) {
+    live.slice(0, live.length - MAX_TOASTS).forEach(dismissToast);
+  }
 }
 
 // Bandingin status banned sekarang vs poll sebelumnya (data Firebase bersama, bukan aksi lokal),
