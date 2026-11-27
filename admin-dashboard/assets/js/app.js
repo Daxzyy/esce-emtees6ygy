@@ -505,20 +505,19 @@ function visibleSelectable() {
 }
 
 function updateSelBar() {
-  const bar = qs("#selbar");
-  if (!bar) return;
-  bar.hidden = !selectMode;
+  const fab = qs("#sel-ban");
+  if (!fab) return;
   document.body.classList.toggle("select-mode", selectMode);
   qs("#sel").setAttribute("aria-pressed", String(selectMode));
   const n = selected.size;
-  setText("#sel-count", n + " dipilih");
-  const ban = qs("#sel-ban");
-  ban.disabled = n === 0;
-  ban.textContent = n ? "Ban " + n + " perangkat" : "Ban";
+  fab.hidden = !(selectMode && n > 0);
+  fab.textContent = "Ban " + n + " perangkat";
   const all = visibleSelectable();
   const allOn = all.length > 0 && all.every(d => selected.has(d.code));
-  qs("#sel-all").textContent = allOn ? "Kosongkan" : "Pilih semua";
-  qs("#sel-all").disabled = all.length === 0;
+  const sa = qs("#sel-all");
+  sa.hidden = !selectMode;
+  sa.textContent = allOn ? "Kosongkan" : "Pilih semua";
+  sa.disabled = all.length === 0;
 }
 
 function setSelectMode(on) {
@@ -1510,23 +1509,18 @@ function showDash() {
           '<button type="button" data-filter="online" aria-pressed="false">Online<span class="cnt" id="ct-online">(0)</span></button>' +
           '<button type="button" data-filter="offline" aria-pressed="false">Offline<span class="cnt" id="ct-offline">(0)</span></button>' +
           '<button type="button" data-filter="banned" aria-pressed="false">Banned<span class="cnt" id="ct-banned">(0)</span></button>' +
+          '<button type="button" id="sel-all" hidden>Pilih semua</button>' +
         '</div>' +
       '</section>' +
       '<div class="list' + (gridMode ? ' grid2' : '') + '" id="list"></div>' +
       '<div class="state" id="state">Memuat data...</div>' +
     '</main>' +
-    '<div class="selbar" id="selbar" hidden>' +
-      '<button class="btn ghost" type="button" id="sel-cancel">Batal</button>' +
-      '<button class="btn ghost" type="button" id="sel-all">Pilih semua</button>' +
-      '<span class="sel-count" id="sel-count">0 dipilih</span>' +
-      '<button class="btn danger" type="button" id="sel-ban" disabled>Ban</button>' +
-    '</div>';
+    '<button class="sel-fab" type="button" id="sel-ban" hidden>Ban</button>';
 
   filter = "all"; query = "";
 
   selectMode = false; selected.clear();
   qs("#sel").addEventListener("click", () => setSelectMode(!selectMode));
-  qs("#sel-cancel").addEventListener("click", () => setSelectMode(false));
   qs("#sel-all").addEventListener("click", selectAllVisible);
   qs("#sel-ban").addEventListener("click", openMassBan);
   qs("#ghist").addEventListener("click", openGlobalHistory);
