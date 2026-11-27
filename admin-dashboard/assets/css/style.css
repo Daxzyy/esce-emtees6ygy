@@ -652,3 +652,57 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
   .gh-item::before { left: -15px; }
   .gh-card { padding: 10px; }
 }
+
+/* =====================================================================
+   Riwayat pesan ban (per perangkat): linimasa aktivitas yang ringkas, satu sistem desain dengan modal global
+   (token, badge, ikon, kartu keterangan sama), tapi tanpa kartu besar per entri.
+   Semua selector di-scope ke #m-hist / .ptl / .ph-*, modal global tidak ikut berubah.
+   ===================================================================== */
+.modal.center:has(#m-hist) { max-width: 480px; }
+.modal.center:has(#m-hist) h2 { margin: 0 0 2px; font-size: 18px; line-height: 1.25; letter-spacing: -.01em; }
+.modal.center:has(#m-hist) p.hist-sub { margin: 0 0 14px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.modal.center:has(#m-hist) .hist-list { padding: 4px 4px 8px 6px; margin-left: -6px; scrollbar-width: thin; }
+.modal.center:has(#m-hist) .modal-actions { margin-top: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+.modal.center.single:has(#m-hist) .modal-actions .btn { flex: 1; }
+
+/* Garis tipis per-entri yang berhenti tepat di node terakhir; node sejajar dengan baris badge+waktu */
+.ptl { padding-left: 22px; }
+.ptl::before { content: none; }
+.ph-item { margin-bottom: 18px; --ac: var(--danger); --ac-bg: var(--danger-bg); --ac-t: var(--danger-text); }
+.ph-item.k-edit { --ac: var(--primary); --ac-bg: color-mix(in srgb, var(--primary) 16%, transparent); --ac-t: var(--primary); }
+.ph-item.k-unban { --ac: var(--ok); --ac-bg: var(--ok-bg); --ac-t: var(--ok); }
+.ph-item::before { content: ""; position: absolute; left: -17px; top: 10px; bottom: -28px; width: 1px; background: var(--border); }
+.ph-item:last-child { margin-bottom: 0; }
+.ph-item:last-child::before { display: none; }
+.ph-item .tl-dot { left: -22px; top: 4.5px; width: 11px; height: 11px; z-index: 1; background: var(--ac); opacity: 1; box-shadow: 0 0 0 3px var(--surface); }
+.ph-item.now .tl-dot { background: var(--ac); box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px color-mix(in srgb, var(--ac) 30%, transparent); }
+
+/* Baris informasi: [badge] [ikon jam] [waktu], rata tengah, turun baris rapi kalau sempit */
+.ptl .tl-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 20px; margin-bottom: 0; }
+.ptl .tl-tag { padding: 0 8px 0 6px; line-height: 20px; font-size: 11.5px; }
+.ptl .tl-tag:not(:has(svg)) { padding-left: 8px; }
+.ptl .tl-tag svg { width: 11px; height: 11px; }
+.ptl .tl-tag.now,
+:root[data-theme="dark"] .ptl .tl-tag.now { background: var(--danger-bg); color: var(--danger-text); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 30%, transparent); }
+
+/* Durasi ban: satu baris ringkas */
+.ph-dur { display: flex; align-items: flex-start; gap: 8px; margin-top: 7px; }
+.ph-dur-ic { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: var(--ac-bg); color: var(--ac-t); }
+.ph-dur-ic svg { width: 13px; height: 13px; }
+.ph-dur-tx { min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; line-height: 22px; }
+.ph-dur-k { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.ph-dur-v { font-size: 14px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ph-dur-pre { font-weight: 600; color: var(--muted); }
+.ph-dur-s { flex-basis: 100%; margin-top: -3px; font-size: 12px; line-height: 1.3; color: var(--muted); }
+.ph-dur.none .ph-dur-ic { background: var(--surface-2); color: var(--muted); }
+.ph-dur.none .ph-dur-v { font-size: 13px; font-weight: 600; font-style: italic; color: var(--muted); }
+
+/* Kartu keterangan (komponen sama dengan modal global), di atas modal jadi latarnya sedikit beda */
+.ph-item .gh-panel { margin-top: 8px; background: var(--surface-2); }
+.ptl .gh-i { color: var(--muted); font-size: 12.5px; }
+
+@media (max-width: 360px) {
+  .ptl { padding-left: 20px; }
+  .ph-item .tl-dot { left: -20px; }
+  .ph-item::before { left: -15px; }
+}

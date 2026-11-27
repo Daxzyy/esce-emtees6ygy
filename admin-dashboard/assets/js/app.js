@@ -1056,21 +1056,31 @@ async function logUnban(code, info, ts) {
   } catch (e) { console.error("catatan unban gagal dicatat", e); }
 }
 
-// Catatan "Lama ban" di entri unban
-function lamaBanHtml(x) {
-  const since = Number(x.since) || 0;
-  if (!since) return '<div class="tl-note none">' + ICON_TIMER + '<span>Lama ban tidak tercatat</span></div>';
-  const from = fmtShort(since, nowMs()).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase());
-  return '<div class="tl-note">' + ICON_TIMER + '<span>Lama ban</span><b>' + (x.est ? "\u2248 " : "") + h(fmtDur(Number(x.duration) || 0)) + '</b>' +
-    '<small>sejak ' + h(from) + '</small></div>';
+// Durasi ban di linimasa riwayat per perangkat: satu baris ringkas (bukan kartu), format sama dengan modal global.
+// i = hasil ghDurInfo(): unban -> lama ban yang sudah berakhir, ban aktif -> timer berjalan (+ waktu mulai).
+function phDurHtml(i, now) {
+  const est = i.est ? "\u2248 " : "";
+  let v;
+  if (i.live) {
+    v = '<span class="ph-dur-pre">Berjalan selama </span><span data-since="' + i.since + '" data-fmt="human"' + (i.est ? ' data-est="1"' : '') + '>' + h(est + fmtDurHuman(now - i.since)) + '</span>';
+  } else if (i.none) {
+    v = "Tidak tercatat";
+  } else {
+    v = h(est + fmtDurHuman(i.dur));
+  }
+  return '<div class="ph-dur' + (i.live ? ' live' : '') + (i.none ? ' none' : '') + '">' +
+    '<span class="ph-dur-ic" aria-hidden="true">' + ICON_TIMER + '</span>' +
+    '<div class="ph-dur-tx"><span class="ph-dur-k">Lama ban</span><b class="ph-dur-v">' + v + '</b>' +
+    (i.live && i.since ? '<span class="ph-dur-s">Dimulai ' + h(ghStartText(i.since, now)) + '</span>' : '') + '</div></div>';
 }
 
-function histItemHtml(kind, time, msg, noteHtml) {
-  return '<div class="tl-item' + (kind === "now" ? ' now' : '') + '">' +
+// Satu entri linimasa: [badge] [ikon jam] [waktu], lalu durasi (kalau ada), lalu kartu keterangan.
+function histItemHtml(kind, time, msg, durHtml) {
+  return '<div class="tl-item ph-item k-' + kind + (kind === "now" ? ' now' : '') + '">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
     '<div class="tl-meta">' + tagHtml(kind) +
-    '<span class="tl-time-ic" aria-hidden="true">' + ICON_HISTORY + '</span><span class="tl-time">' + h(time) + '</span></div>' +
-    (noteHtml || "") + preHtml(msg) + '</div>';
+    '<span class="gh-i" title="Waktu kejadian">' + ICON_HISTORY + '<span>' + h(time) + '</span></span></div>' +
+    (durHtml || "") + ghPanelHtml(kind === "edit" ? "edit" : "ban", msg) + '</div>';
 }
 
 function preHtml(msg) {
@@ -1104,27 +1114,34 @@ async function openHistory(code) {
   const box = qs("#m-hist");
   if (!box) return; // modal sudah ditutup
   items.sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0));
-  const now = nowMs();
-  let html = "";
-  if (d && d.banned && d.banMsg) {
-    // Pesan aktif biasanya = entri terbaru di riwayat: gabung, pakai jam aslinya (tidak dobel)
-    if (items.length && items[0].type !== "unban" && items[0].message === d.banMsg) {
-      html += histItemHtml("now", fmtShort(items[0].at, now), d.banMsg);
-      items = items.slice(1);
-    } else {
-      html += histItemHtml("now", "Sekarang", d.banMsg);
-    }
-  }
-  html += items.map(x =>
-    x.type === "unban"
-      ? histItemHtml("unban", fmtShort(x.at, now), "", lamaBanHtml(x))
-      : histItemHtml(x.type === "edit" ? "edit" : "ban", fmtShort(x.at, now), x.message)
-  ).join("");
+  const html = histBuildHtml(items, d, code, nowMs());
   if (!html) {
     box.innerHTML = '<p class="hist-empty">' + (failed ? "Gagal memuat riwayat." : "Belum ada riwayat pesan custom.") + '</p>';
     return;
   }
-  box.innerHTML = '<div class="tl">' + html + '</div>';
+  box.innerHTML = '<div class="tl ptl">' + html + '</div>';
+}
+
+// Susun HTML linimasa per perangkat dari entri yang sudah terurut (terbaru dulu).
+// Durasi cuma ditampilkan di: Di-unban (masa ban yang sudah berakhir) dan ban yang sedang aktif (timer berjalan).
+// Entri ban/edit lama tidak menghitung durasi sendiri (sudah ada di entri Di-unban-nya), jadi nggak dobel.
+function histBuildHtml(items, d, code, now) {
+  items = items.map(x => Object.assign({ code }, x)); // cuma buat tampilan, tidak ditulis balik ke data
+  let html = "";
+  if (d && d.banned && d.banMsg) {
+    // Pesan aktif biasanya = entri terbaru di riwayat: gabung, pakai jam aslinya (tidak dobel)
+    const merged = items.length && items[0].type !== "unban" && items[0].message === d.banMsg;
+    const at = merged ? Number(items[0].at) || now : now;
+    const dur = phDurHtml(ghDurInfo({ code, type: "ban", at, message: d.banMsg }, d, items), now);
+    html += histItemHtml("now", merged ? fmtShort(items[0].at, now) : "Sekarang", d.banMsg, dur);
+    if (merged) items = items.slice(1);
+  }
+  html += items.map(x =>
+    x.type === "unban"
+      ? histItemHtml("unban", fmtShort(x.at, now), "", phDurHtml(ghDurInfo(x, d, items), now))
+      : histItemHtml(x.type === "edit" ? "edit" : "ban", fmtShort(x.at, now), x.message)
+  ).join("");
+  return html;
 }
 
 
@@ -1136,7 +1153,7 @@ async function openHistory(code) {
 function ghDurInfo(item, d, all) {
   if (item.type === "unban") {
     const since = Number(item.since) || 0;
-    if (!since) return { since: 0, none: true }; // sama seperti lamaBanHtml: tanpa "since" = lama ban tidak tercatat
+    if (!since) return { since: 0, none: true }; // tanpa "since" = lama ban tidak tercatat
     return { since, dur: Number(item.duration) || 0, est: !!item.est, live: false };
   }
   const at = Number(item.at) || 0;
