@@ -492,6 +492,111 @@ function gridCardHtml(d, now) {
   );
 }
 
+/* ===================== Ban massal (mode pilih) ===================== */
+let selectMode = false;
+const selected = new Set();
+const selectable = d => !d.banned && !PROTECTED_CODES.has(d.code);
+const selBoxHtml = d => selectMode && selectable(d)
+  ? '<span class="sel-box' + (selected.has(d.code) ? ' on' : '') + '" aria-hidden="true">' + ICON_CHECK + '</span>' : "";
+
+function visibleSelectable() {
+  const now = nowMs();
+  return devices.map(r => decorate(r, now)).filter(d => matchesFilter(d) && matchesQuery(d) && selectable(d));
+}
+
+function updateSelBar() {
+  const bar = qs("#selbar");
+  if (!bar) return;
+  bar.hidden = !selectMode;
+  document.body.classList.toggle("select-mode", selectMode);
+  qs("#sel").setAttribute("aria-pressed", String(selectMode));
+  const n = selected.size;
+  setText("#sel-count", n + " dipilih");
+  const ban = qs("#sel-ban");
+  ban.disabled = n === 0;
+  ban.textContent = n ? "Ban " + n + " perangkat" : "Ban";
+  const all = visibleSelectable();
+  const allOn = all.length > 0 && all.every(d => selected.has(d.code));
+  qs("#sel-all").textContent = allOn ? "Kosongkan" : "Pilih semua";
+  qs("#sel-all").disabled = all.length === 0;
+}
+
+function setSelectMode(on) {
+  selectMode = on;
+  if (!on) selected.clear();
+  render();
+  updateSelBar();
+}
+
+function toggleSel(code) {
+  const d = findDevice(code);
+  if (!d || !selectable(d)) return;
+  if (selected.has(code)) selected.delete(code); else selected.add(code);
+  render();
+  updateSelBar();
+}
+
+function selectAllVisible() {
+  const all = visibleSelectable();
+  const allOn = all.length > 0 && all.every(d => selected.has(d.code));
+  if (allOn) all.forEach(d => selected.delete(d.code)); else all.forEach(d => selected.add(d.code));
+  render();
+  updateSelBar();
+}
+
+function openMassBan() {
+  const codes0 = [...selected].filter(c => !PROTECTED_CODES.has(c));
+  if (!codes0.length) return;
+  const names = codes0.map(c => { const d = findDevice(c); return d ? deviceName(d) : c; });
+  const shownNames = names.slice(0, 6).map(n => '<span class="mb-chip">' + h(n) + '</span>').join("") +
+    (names.length > 6 ? '<span class="mb-chip more">+' + (names.length - 6) + ' lainnya</span>' : "");
+  openModal({
+    title: "Ban " + codes0.length + " perangkat",
+    cls: "danger",
+    okText: "Ban " + codes0.length + " perangkat",
+    body:
+      '<p>Pesan ban yang sama dikirim ke semua perangkat terpilih. Semuanya langsung terkunci saat ujian.</p>' +
+      '<div class="mb-chips">' + shownNames + '</div>' +
+      tplFieldHtml(""),
+    onConfirm: async () => {
+      // Dibaca ulang saat konfirmasi: kalau sebagian gagal lalu dicoba lagi, hanya yang gagal yang diproses
+      const codes = [...selected].filter(c => !PROTECTED_CODES.has(c) && !(findDevice(c) || {}).banned);
+      const message = qs("#m-msg").value.trim();
+      const ok = qs("#m-ok");
+      const failed = [];
+      let done = 0;
+      for (let i = 0; i < codes.length; i += 5) {
+        const chunk = codes.slice(i, i + 5);
+        const res = await Promise.allSettled(chunk.map(async code => {
+          const ts = nowMs();
+          await jf(BANS + "/" + encodeURIComponent(code) + ".json", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json; charset=utf-8" },
+            body: JSON.stringify({ banned: true, message, since: ts })
+          });
+          await logBanMsg(code, message, "ban");
+          const d = findDevice(code);
+          if (d) { d.banned = true; d.banSince = ts; d.banSinceEst = false; }
+          selected.delete(code);
+        }));
+        res.forEach((r, k) => { if (r.status === "rejected") failed.push(chunk[k]); });
+        done += chunk.length;
+        ok.textContent = "Memproses " + done + "/" + codes.length + "...";
+      }
+      render();
+      refresh();
+      if (failed.length) {
+        updateSelBar();
+        throw new Error(failed.length + " dari " + codes.length + " perangkat gagal di-ban");
+      }
+      selectMode = false;
+      updateSelBar();
+      render();
+    }
+  });
+  bindTemplates("");
+}
+
 // Device yang tidak boleh di-ban (cuma di frontend). Kalau sudah terlanjur banned, tetap bisa di-unban.
 const PROTECTED_CODES = new Set(["6A9A1051"]);
 const isProtected = d => PROTECTED_CODES.has(d.code) && !d.banned;
@@ -589,10 +694,13 @@ function render() {
     a.code.localeCompare(b.code)
   );
 
+  if (selectMode) for (const c of [...selected]) { const d = all.find(x => x.code === c); if (!d || !selectable(d)) selected.delete(c); }
+
   reconcile(listEl, shown.map(d => ({
     code: d.code,
-    cls: "card" + (d.banned ? " is-banned" : "") + (isProtected(d) ? " is-protected" : "") + (gridMode ? " g-card" : ""),
-    html: cardHtml(d, now)
+    cls: "card" + (d.banned ? " is-banned" : "") + (isProtected(d) ? " is-protected" : "") + (gridMode ? " g-card" : "") +
+      (selectMode && selectable(d) ? " sel-on" + (selected.has(d.code) ? " is-selected" : "") : ""),
+    html: cardHtml(d, now) + selBoxHtml(d)
   })));
 
   const st = qs("#state");
@@ -608,6 +716,7 @@ function render() {
     st.hidden = true;
   }
   tickDur();
+  if (selectMode) updateSelBar();
 }
 
 // Durasi ban realtime: elemen [data-since] diisi dari sini tiap detik. Isi kartu sendiri nggak
@@ -1359,6 +1468,7 @@ const ICON_HASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
 const ICON_BAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';
 const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
+const ICON_SELECT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><path d="M5 6.5l1.5 1.5L9 5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 6.5h7M14 17.5h7"/></svg>';
 const ICON_BOLT = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>';
 const ICON_LOGOUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>';
 
@@ -1381,6 +1491,7 @@ function showDash() {
       '<div class="brand-text"><strong>List Device</strong><span class="conn" id="conn"></span></div>' +
       '<div class="top-actions">' +
         '<button class="btn icon-btn sq" type="button" id="ghist" aria-label="Riwayat ban semua perangkat" title="Riwayat ban (semua perangkat)">' + ICON_HISTORY + '<span class="badge-count" id="ghist-count" hidden>0</span></button>' +
+        '<button class="btn icon-btn sq" type="button" id="sel" aria-label="Pilih banyak perangkat" aria-pressed="false" title="Pilih banyak (ban massal)">' + ICON_SELECT + '</button>' +
         '<button class="btn icon-btn sq" type="button" id="grid" aria-label="Mode grid" aria-pressed="' + gridMode + '" title="Mode grid">' + ICON_GRID + '</button>' +
         '<button class="btn icon-btn sq" type="button" id="theme" aria-label="Ganti tema" title="Ganti tema">' + ICON_SUN + ICON_MOON + '</button>' +
         '<button class="btn icon-btn sq logout" type="button" id="logout" aria-label="Logout" title="Logout">' + ICON_LOGOUT + '</button>' +
@@ -1403,10 +1514,21 @@ function showDash() {
       '</section>' +
       '<div class="list' + (gridMode ? ' grid2' : '') + '" id="list"></div>' +
       '<div class="state" id="state">Memuat data...</div>' +
-    '</main>';
+    '</main>' +
+    '<div class="selbar" id="selbar" hidden>' +
+      '<button class="btn ghost" type="button" id="sel-cancel">Batal</button>' +
+      '<button class="btn ghost" type="button" id="sel-all">Pilih semua</button>' +
+      '<span class="sel-count" id="sel-count">0 dipilih</span>' +
+      '<button class="btn danger" type="button" id="sel-ban" disabled>Ban</button>' +
+    '</div>';
 
   filter = "all"; query = "";
 
+  selectMode = false; selected.clear();
+  qs("#sel").addEventListener("click", () => setSelectMode(!selectMode));
+  qs("#sel-cancel").addEventListener("click", () => setSelectMode(false));
+  qs("#sel-all").addEventListener("click", selectAllVisible);
+  qs("#sel-ban").addEventListener("click", openMassBan);
   qs("#ghist").addEventListener("click", openGlobalHistory);
   qs("#grid").addEventListener("click", function () {
     gridMode = !gridMode;
@@ -1426,6 +1548,11 @@ function showDash() {
     render();
   });
   qs("#list").addEventListener("click", e => {
+    if (selectMode) {
+      const art = e.target.closest("article[data-code]");
+      if (art) toggleSel(art.dataset.code);
+      return;
+    }
     const b = e.target.closest("button[data-act]");
     if (!b) return;
     if (b.dataset.act === "copy") copyId(b);
