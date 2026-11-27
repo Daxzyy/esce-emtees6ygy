@@ -196,17 +196,6 @@ textarea.input[readonly] { resize: none; cursor: default; background: var(--surf
 .owner-chip.empty { border: 1.5px dashed var(--border); color: var(--muted); font-weight: 500; }
 .owner-chip.empty:hover { border-color: var(--primary); color: var(--primary); }
 .ban-msg-row { margin: 2px 0 0; }
-.ban-dur-row { margin: 6px 0 0; }
-/* Durasi ban realtime (data-since diisi JS tiap detik) */
-.ban-dur { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px 12px 4px 9px; border-radius: 999px; background: var(--danger-bg); color: var(--danger-text); font-size: 12.5px; line-height: 1.25; font-weight: 600; white-space: nowrap; }
-.ban-dur svg { width: 14px; height: 14px; flex: none; }
-.ban-dur .bd-v { font-weight: 800; font-variant-numeric: tabular-nums; }
-.ban-dur.none { background: var(--surface-2); color: var(--muted); font-weight: 500; }
-.g-dur { margin-top: 6px; min-width: 0; }
-/* Kartu grid sempit: chip boleh turun baris (angka durasi di baris bawah) daripada kepotong */
-.g-dur .ban-dur { flex-wrap: wrap; align-items: center; gap: 0 6px; white-space: normal; border-radius: 12px; padding: 5px 10px 5px 9px; font-size: 12px; }
-.g-dur .ban-dur .bd-v, .g-dur .ban-dur .bd-l { white-space: normal; }
-.tl-meta.tl-dur { margin: 0 0 6px; }
 .ban-msg-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 230px; padding: 3px 11px; border: 1.5px solid var(--danger-text); border-radius: 999px; background: transparent; color: var(--danger-text); font-size: 12px; font-weight: 600; cursor: pointer; }
 .ban-msg-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ban-msg-chip svg { flex: none; width: 13px; height: 13px; }
@@ -437,7 +426,21 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .tl-head { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-bottom: 3px; }
 .tl-tags { display: flex; align-items: center; gap: 6px; flex: none; margin-left: auto; }
 .tl-item.is-new .tl-dot { background: var(--ok); opacity: 1; box-shadow: 0 0 0 3px var(--ok-bg); }
-.tl-tag.new { background: var(--ok-bg); color: var(--ok); }
+.tl-tag.new { background: var(--ok); color: #fff; }
+:root[data-theme="dark"] .tl-tag.new { color: #052e16; }
+.tl-tag.unban { background: var(--ok-bg); color: var(--ok); }
+/* Catatan lama ban di entri unban */
+.tl-note { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.tl-note svg { width: 14px; height: 14px; flex: none; }
+.tl-note b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.tl-note small { font-size: 12px; font-weight: 600; }
+.tl-note.none { font-style: italic; }
+/* Timer ban di dalam badge "Banned" (kartu list) dan hero (kartu grid) */
+.badge .bn-sep { width: 1px; height: 12px; background: currentColor; opacity: .4; }
+.badge.banned svg { width: 13px; height: 13px; flex: none; margin-right: -2px; }
+.bn-t { font-weight: 700; font-variant-numeric: tabular-nums; }
+.g-bt { z-index: 3; position: absolute; right: 10px; top: 28px; display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--danger-text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.g-bt svg { width: 12px; height: 12px; flex: none; }
 .tl-name { flex: 0 1 auto; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14.5px; font-weight: 700; color: var(--text); }
 /* Label pemilik: chip yang kelihatan jelas, tidak dipotong */
 .tl-owner { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px 0 7px; line-height: 22px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); font-size: 12.5px; font-weight: 700; white-space: nowrap; }

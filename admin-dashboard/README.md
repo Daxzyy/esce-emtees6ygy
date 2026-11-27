@@ -24,9 +24,13 @@ Vercel, Root Directory = `admin-dashboard/` (repo publik). Tanpa build step. Scr
 - Ban pakai modal (input pesan opsional), Unban pakai modal konfirmasi.
   Ban menulis `/banned/{kode}` = `{banned: true, message, since}` (`since` = ms waktu ban dimulai), Unban menghapus node itu.
   Field `since` aman buat APK (app cuma baca `banned` dan `message`). Edit pesan ban mempertahankan `since`.
-- Durasi ban realtime ("Diban 2 jam 14 mnt 08 dtk") di kartu device yang lagi banned (mode list dan grid) dan di
-  riwayat per device (item "Sedang aktif"). Angkanya diupdate tiap detik tanpa merender ulang kartu. Ban lama yang belum
-  punya `since` ditebak dari entri riwayat terbaru (tampil dengan awalan `≈`), kalau tidak ada: "Durasi ban belum tercatat".
+- Durasi ban realtime: timer `02:14:08` (atau `1 hr 02:14` kalau sudah >= 1 hari) menyatu di badge **Banned** (mode list)
+  dan di pojok kanan atas hero kartu (mode grid). Diupdate tiap detik tanpa merender ulang kartu. Ban lama yang belum punya
+  `since` ditebak dari entri riwayat terbaru (awalan `≈`); kalau tidak ada, timer disembunyikan.
+- Setelah **Unban**, lama ban dicatat ke riwayat (`/ban_history/{kode}`, `type: "unban"`, `since`, `duration` dalam ms) dan tampil
+  sebagai catatan "Lama ban 5 jam 22 mnt 09 dtk, sejak kemarin 23.50" di riwayat per device dan riwayat global.
+- Jam dashboard memakai jam monoton (`performance.now`) dan cuma disetel ulang kalau meleset > 3 detik dari server, supaya
+  detik timer/"Live" berjalan stabil (dulu header `Date` Firebase yang dibulatkan per detik bikin detik loncat).
 - Label di riwayat jelas dan kontras: `Di-ban`, `Pesan diedit`, `Sedang aktif`, `Baru` (berikon). Di riwayat global, label
   pemilik tampil sebagai chip di kanan nama perangkat.
 - Tema light/dark (default light, bisa diganti lewat tombol di header, tersimpan)

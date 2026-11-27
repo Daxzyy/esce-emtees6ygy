@@ -78,8 +78,16 @@ function isAuthed() {
 }
 
 /* ===================== Waktu ===================== */
-let serverOffset = 0; // server - klien (ms), dari header Date Firebase kalau terbaca
-function nowMs() { return Date.now() + serverOffset; }
+// Jam acuan dashboard. Dijalankan di atas jam monoton (performance.now) supaya detik berjalan stabil.
+// Header Date Firebase cuma presisi 1 detik, jadi kalau tiap respons menggeser jam (seperti dulu),
+// angka detik durasi/"Live" loncat-loncat (kadang kecepetan, kadang mundur). Sekarang jam cuma
+// disetel ulang kalau meleset > 3 detik (jam PC beda dengan server, atau laptop habis sleep).
+let clockBase = Date.now();
+let clockPerf = performance.now();
+function nowMs() { return Math.round(clockBase + (performance.now() - clockPerf)); }
+function checkClock(refMs) {
+  if (Math.abs(refMs - nowMs()) > 3000) { clockBase = refMs; clockPerf = performance.now(); }
+}
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const dtf = new Intl.DateTimeFormat("en-GB", {
@@ -132,6 +140,16 @@ function fmtDur(ms) {
   if (hr > 0) return hr + " jam " + pad(m) + " mnt " + pad(s) + " dtk";
   if (m > 0) return m + " mnt " + pad(s) + " dtk";
   return s + " dtk";
+}
+
+// Format jam-hitung buat badge/hero: "02:14:08", atau "1 hr 02:14" kalau sudah >= 1 hari
+function fmtDurClock(ms) {
+  let s = Math.floor(Math.max(0, Number(ms) || 0) / 1000);
+  const d = Math.floor(s / 86400); s -= d * 86400;
+  const hr = Math.floor(s / 3600); s -= hr * 3600;
+  const m = Math.floor(s / 60); s -= m * 60;
+  if (d > 0) return d + " hr " + pad(hr) + ":" + pad(m);
+  return pad(hr) + ":" + pad(m) + ":" + pad(s);
 }
 
 function fmtClock(ms) {
@@ -255,6 +273,7 @@ let loaded = false;
 let loadError = "";
 let pollTimer = null;
 let tickTimer = null;
+let durTimer = null; // ticker ringan khusus durasi ban
 let gsmaIndex = null;
 let gsmaIndexPromise = null;
 const cards = new Map();   // code -> { el, html, cls }
@@ -263,10 +282,12 @@ const cards = new Map();   // code -> { el, html, cls }
 async function jf(u, opts) {
   const o = opts || {};
   const r = await fetch(u, { ...o, headers: { "Authorization": AUTH_HEADER, ...(o.headers || {}) } });
+  let ref = Date.now();
   try {
     const d = Date.parse(r.headers.get("date") || "");
-    if (!isNaN(d)) serverOffset = d - Date.now();
+    if (!isNaN(d)) ref = d + 500; // header dibulatkan ke bawah per detik: ambil tengah-tengahnya
   } catch (e) { /* header tidak terbaca (CORS), pakai jam browser */ }
+  checkClock(ref);
   if (!r.ok) throw new Error("HTTP " + r.status);
   return r.json();
 }
@@ -434,6 +455,7 @@ function gridCardHtml(d, now) {
     '<div class="g-hero ' + tone + '">' + water +
       '<div class="g-pct">' + (b.has ? battIcon(b.pct) + b.pct + '<small>%</small>' + (b.cls === "charging" ? ICON_BOLT : "") : "\u2013") + '</div>' +
       '<div class="g-st">' + status + '</div>' +
+      (d.banned && d.since ? '<div class="g-bt" title="' + h(banSinceTitle(d.since, d.sinceEst)) + '">' + ICON_TIMER + banTimerHtml(d.since, d.sinceEst) + '</div>' : '') +
       '<div class="g-sub">' + h(sub) + '</div>' +
     '</div>' +
     '<div class="g-bd">' +
@@ -441,7 +463,6 @@ function gridCardHtml(d, now) {
       '<div class="g-title-text"><div class="name-line"><h3 class="name">' + h(d.name) + '</h3></div>' + (d.model ? '<div class="g-model">' + h(d.model) + '</div>' : '') + '</div></div>' +
       '<button class="g-owner' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + code + '" aria-label="Edit label pemilik" title="Edit label pemilik">' + ICON_USER + '<span>' + h(d.owner || "Tambah label") + '</span>' + ICON_PENCIL + '</button>' +
       quote +
-      (d.banned ? '<div class="g-dur">' + durChipHtml(d.banned, d.since, d.sinceEst) + '</div>' : '') +
       '<div class="g-id"><span class="id-chip"><code>' + code + '</code>' +
         '<button class="copy-btn" type="button" data-act="copy" data-code="' + code + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></span></div>' +
     '</div>' +
@@ -458,7 +479,10 @@ function cardHtml(d, now) {
   const presence = d.online
     ? '<span class="badge online"><span class="dot"></span>Online</span>'
     : '<span>' + h(d.ls ? "Terakhir dilihat " + fmtDate(d.ls, now).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase()) : "Belum pernah terlihat") + '</span>';
-  const banned = d.banned ? '<span class="badge banned">Banned</span>' : "";
+  const banned = d.banned
+    ? '<span class="badge banned" title="' + h(banSinceTitle(d.since, d.sinceEst)) + '">Banned' +
+      (d.since ? '<span class="bn-sep" aria-hidden="true"></span>' + ICON_TIMER + banTimerHtml(d.since, d.sinceEst) : '') + '</span>'
+    : "";
   const banMsgChip = d.banned
     ? '<button class="ban-msg-chip' + (d.banMsg ? '' : ' empty') + '" type="button" data-act="banmsg" data-code="' + h(d.code) + '" aria-label="Edit pesan ban" title="Edit pesan ban">' +
       ICON_PENCIL + '<span>' + h(d.banMsg || "Tanpa pesan custom") + '</span></button>'
@@ -473,7 +497,7 @@ function cardHtml(d, now) {
       '<div class="name-block"><div class="name-line"><h3 class="name">' + h(d.name) + '</h3></div>' + (d.model ? '<div class="model">' + h(d.model) + '</div>' : '') +
       '<div class="meta-row"><button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button>' + presence + banned + '</div></div></div>' +
-      (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p><p class="ban-dur-row">' + durChipHtml(d.banned, d.since, d.sinceEst) + '</p>' : '') +
+      (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p>' : '') +
       '</div>' +
       ringHtml(r, d.online) +
     '</div>' +
@@ -566,16 +590,19 @@ function tickDur() {
   document.querySelectorAll("[data-since]").forEach(el => {
     const t = Number(el.dataset.since);
     if (!t) return;
-    const txt = (el.dataset.est ? "\u2248 " : "") + fmtDur(now - t);
+    const txt = (el.dataset.est ? "\u2248 " : "") + (el.dataset.fmt === "clock" ? fmtDurClock : fmtDur)(now - t);
     if (el.textContent !== txt) el.textContent = txt;
   });
 }
 
-function durChipHtml(banned, since, est) {
-  if (!banned) return "";
-  if (!since) return '<span class="ban-dur none">' + ICON_TIMER + '<span class="bd-l">Durasi ban belum tercatat</span></span>';
-  return '<span class="ban-dur' + (est ? ' est' : '') + '" title="' + h((est ? "Perkiraan, sejak " : "Diban sejak ") + fmtDate(since, nowMs()).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase())) + '">' + ICON_TIMER +
-    '<span class="bd-l">Diban</span><b class="bd-v" data-since="' + since + '"' + (est ? ' data-est="1"' : '') + '></b></span>';
+// Timer ban kecil (ikut warna induknya): dipakai di badge "Banned" dan hero kartu grid
+function banTimerHtml(since, est) {
+  if (!since) return "";
+  return '<span class="bn-t" data-since="' + since + '" data-fmt="clock"' + (est ? ' data-est="1"' : '') + '></span>';
+}
+function banSinceTitle(since, est) {
+  if (!since) return "Waktu mulai ban belum tercatat";
+  return (est ? "Perkiraan, diban sejak " : "Diban sejak ") + fmtDate(since, nowMs()).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase());
 }
 
 function setText(sel, v) {
@@ -987,7 +1014,7 @@ function lastBanAtMap(ghist) {
     const rows = ghist[code];
     if (!rows || typeof rows !== "object") continue;
     for (const row of Object.values(rows)) {
-      if (!row || row.type === "edit") continue;
+      if (!row || row.type === "edit" || row.type === "unban") continue;
       const at = Number(row.at) || 0;
       if (at > (out[code] || 0)) out[code] = at;
     }
@@ -997,18 +1024,43 @@ function lastBanAtMap(ghist) {
 
 // Label jenis entri riwayat: teks jelas + ikon + warna kontras
 function tagHtml(kind) {
-  const t = { ban: ["Di-ban", ICON_BAN], edit: ["Pesan diedit", ICON_PENCIL], now: ["Sedang aktif", ICON_LOCK], new: ["Baru", ""] }[kind] || ["", ""];
+  const t = { ban: ["Di-ban", ICON_BAN], edit: ["Pesan diedit", ICON_PENCIL], unban: ["Di-unban", ICON_CHECK], now: ["Sedang aktif", ICON_LOCK], new: ["Baru", ""] }[kind] || ["", ""];
   return '<span class="tl-tag ' + kind + '">' + t[1] + '<span>' + h(t[0]) + '</span></span>';
 }
 
-function histItemHtml(kind, time, msg, durHtml) {
+// Catatan unban: /ban_history/{kode}/{pushId} = { message, at, type: "unban", since, duration, est }
+// duration = lama ban (ms). Gagal nyatet tidak membatalkan unban-nya.
+async function logUnban(code, info, ts) {
+  try {
+    await jf(BAN_HISTORY + "/" + encodeURIComponent(code) + ".json", {
+      method: "POST",
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ message: info.message || "", at: ts, type: "unban", since: info.since || 0, duration: info.since ? Math.max(0, ts - info.since) : 0, est: info.est ? 1 : 0 })
+    });
+  } catch (e) { console.error("catatan unban gagal dicatat", e); }
+}
+
+// Catatan "Lama ban" di entri unban
+function lamaBanHtml(x) {
+  const since = Number(x.since) || 0;
+  if (!since) return '<div class="tl-note none">' + ICON_TIMER + '<span>Lama ban tidak tercatat</span></div>';
+  const from = fmtShort(since, nowMs()).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase());
+  return '<div class="tl-note">' + ICON_TIMER + '<span>Lama ban</span><b>' + (x.est ? "\u2248 " : "") + h(fmtDur(Number(x.duration) || 0)) + '</b>' +
+    '<small>sejak ' + h(from) + '</small></div>';
+}
+
+function histItemHtml(kind, time, msg, noteHtml) {
   return '<div class="tl-item' + (kind === "now" ? ' now' : '') + '">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
     '<div class="tl-meta">' + tagHtml(kind) +
     '<span class="tl-time-ic" aria-hidden="true">' + ICON_HISTORY + '</span><span class="tl-time">' + h(time) + '</span></div>' +
-    (durHtml ? '<div class="tl-meta tl-dur">' + durHtml + '</div>' : '') +
-    '<div class="tl-pre"><pre class="tl-msg">' + h(msg) + '</pre>' +
-    '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div></div>';
+    (noteHtml || "") + preHtml(msg) + '</div>';
+}
+
+function preHtml(msg) {
+  if (!msg) return "";
+  return '<div class="tl-pre"><pre class="tl-msg">' + h(msg) + '</pre>' +
+    '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div>';
 }
 
 async function openHistory(code) {
@@ -1040,22 +1092,23 @@ async function openHistory(code) {
   let html = "";
   if (d && d.banned && d.banMsg) {
     // Pesan aktif biasanya = entri terbaru di riwayat: gabung, pakai jam aslinya (tidak dobel)
-    if (items.length && items[0].message === d.banMsg) {
-      html += histItemHtml("now", fmtShort(items[0].at, now), d.banMsg, durChipHtml(true, d.banSince, d.banSinceEst));
+    if (items.length && items[0].type !== "unban" && items[0].message === d.banMsg) {
+      html += histItemHtml("now", fmtShort(items[0].at, now), d.banMsg);
       items = items.slice(1);
     } else {
-      html += histItemHtml("now", "Sekarang", d.banMsg, durChipHtml(true, d.banSince, d.banSinceEst));
+      html += histItemHtml("now", "Sekarang", d.banMsg);
     }
   }
   html += items.map(x =>
-    histItemHtml(x.type === "edit" ? "edit" : "ban", fmtShort(x.at, now), x.message)
+    x.type === "unban"
+      ? histItemHtml("unban", fmtShort(x.at, now), x.message, lamaBanHtml(x))
+      : histItemHtml(x.type === "edit" ? "edit" : "ban", fmtShort(x.at, now), x.message)
   ).join("");
   if (!html) {
     box.innerHTML = '<p class="hist-empty">' + (failed ? "Gagal memuat riwayat." : "Belum ada riwayat pesan custom.") + '</p>';
     return;
   }
   box.innerHTML = '<div class="tl">' + html + '</div>';
-  tickDur();
 }
 
 
@@ -1064,7 +1117,7 @@ function ghistItemHtml(item, now, isNew) {
   const d = findDevice(item.code);
   const name = d ? deviceName(d) : item.code;
   const owner = d && d.owner ? d.owner : "";
-  const kind = item.type === "edit" ? "edit" : "ban";
+  const kind = item.type === "edit" ? "edit" : item.type === "unban" ? "unban" : "ban";
   return '<div class="tl-item' + (isNew ? ' is-new' : '') + '">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
     '<div class="tl-head"><span class="tl-name">' + h(name) + '</span>' +
@@ -1072,8 +1125,7 @@ function ghistItemHtml(item, now, isNew) {
     '<div class="tl-meta"><span class="tl-time-ic" aria-hidden="true">' + ICON_HISTORY + '</span><span class="tl-time">' + h(fmtShort(item.at, now)) + '</span>' +
     '<code class="tl-code">' + h(item.code) + '</code>' +
     '<span class="tl-tags">' + (isNew ? tagHtml("new") : "") + tagHtml(kind) + '</span></div>' +
-    '<div class="tl-pre"><pre class="tl-msg">' + h(item.message) + '</pre>' +
-    '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div></div>';
+    (kind === "unban" ? lamaBanHtml(item) : "") + preHtml(item.message) + '</div>';
 }
 
 async function renderGlobalHistoryNow() {
@@ -1088,7 +1140,7 @@ async function renderGlobalHistoryNow() {
         const entries = data[code];
         if (!entries || typeof entries !== "object") continue;
         for (const row of Object.values(entries)) {
-          if (row && typeof row.message === "string") items.push({ code, message: row.message, at: row.at, type: row.type });
+          if (row && typeof row.message === "string") items.push({ code, message: row.message, at: row.at, type: row.type, since: row.since, duration: row.duration, est: row.est });
         }
       }
     }
@@ -1142,8 +1194,11 @@ function openUnban(code) {
     okText: "Unban",
     body: '<p>Unban <strong>' + h(name) + '</strong> (ID <code>' + h(code) + '</code>)? Device bisa dipakai ujian lagi.</p>',
     onConfirm: async () => {
+      // Ambil info ban dulu, node-nya dihapus di bawah. Setelah unban, durasi ban dicatat ke riwayat.
+      const info = d && d.banned ? { since: d.banSince || 0, est: !!d.banSinceEst, message: d.banMsg || "" } : null;
       await jf(BANS + "/" + encodeURIComponent(code) + ".json", { method: "DELETE" });
-      if (d) d.banned = false;
+      if (info) await logUnban(code, info, nowMs());
+      if (d) { d.banned = false; d.banSince = 0; d.banSinceEst = false; }
       render();
       refresh();
     }
@@ -1184,8 +1239,8 @@ const ICON_EYE = '<svg class="eye" viewBox="0 0 24 24" fill="none" stroke="curre
 const ICON_EYE_OFF = '<svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.9 17.9A10.9 10.9 0 0112 19C5 19 1 12 1 12a18.5 18.5 0 015.1-5.9M9.9 5.1A10.4 10.4 0 0112 5c7 0 11 7 11 7a18.5 18.5 0 01-2.2 3.2M14.1 14.1a3 3 0 11-4.2-4.2"/><path d="M1 1l22 22"/></svg>';
 
 function stopPolling() {
-  clearInterval(pollTimer); clearInterval(tickTimer);
-  pollTimer = null; tickTimer = null;
+  clearInterval(pollTimer); clearInterval(tickTimer); clearInterval(durTimer);
+  pollTimer = null; tickTimer = null; durTimer = null;
 }
 
 function showDash() {
@@ -1257,6 +1312,7 @@ function showDash() {
   render();
   refresh();
   pollTimer = setInterval(refresh, REFRESH_MS);
+  durTimer = setInterval(tickDur, 250); // cuma ngubah teks kalau detiknya ganti
   tickTimer = setInterval(function () { renderConn(); render(); }, 1000); // update status Online/"Terakhir dilihat" tanpa fetch
 }
 
