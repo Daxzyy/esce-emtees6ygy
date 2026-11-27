@@ -795,3 +795,8 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 
 /* Modal di atas bar aksi: sembunyikan bar selama modal terbuka */
 body.modal-open .cab { display: none; }
+
+.cab-unban { flex: none; min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--primary); color: var(--primary-ink); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.cab-ban { white-space: nowrap; padding: 0 16px; }
+.cab-unban[hidden], .cab-ban[hidden] { display: none; }
+.cab-link { padding: 0 8px; }

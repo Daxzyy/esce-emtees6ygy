@@ -495,7 +495,7 @@ function gridCardHtml(d, now) {
 /* ===================== Ban massal (mode pilih) ===================== */
 let selectMode = false;
 const selected = new Set();
-const selectable = d => !d.banned && !PROTECTED_CODES.has(d.code);
+const selectable = d => !(PROTECTED_CODES.has(d.code) && !d.banned);
 const selBoxHtml = d => selectMode && selectable(d)
   ? '<span class="sel-box' + (selected.has(d.code) ? ' on' : '') + '" aria-hidden="true">' + ICON_CHECK + '</span>' : "";
 
@@ -504,19 +504,31 @@ function visibleSelectable() {
   return devices.map(r => decorate(r, now)).filter(d => matchesFilter(d) && matchesQuery(d) && selectable(d));
 }
 
+function selCounts() {
+  let ban = 0, unban = 0;
+  selected.forEach(c => { const d = findDevice(c); if (!d) return; if (d.banned) unban++; else ban++; });
+  return { ban, unban };
+}
+
 function updateSelBar() {
   const bar = qs("#selbar");
   if (!bar) return;
   bar.hidden = !selectMode;
   document.body.classList.toggle("select-mode", selectMode);
   qs("#sel").setAttribute("aria-pressed", String(selectMode));
-  const n = selected.size;
+  const n = selected.size, c = selCounts();
   setText("#sel-count", n ? n + " dipilih" : "Pilih perangkat");
-  qs("#sel-ban").disabled = n === 0;
+  const ban = qs("#sel-ban"), unban = qs("#sel-unban");
+  // Hanya tombol yang relevan dengan isi pilihan; kalau kosong, tampil Ban nonaktif
+  ban.hidden = n > 0 && c.ban === 0;
+  ban.disabled = c.ban === 0;
+  ban.textContent = c.ban ? "Ban " + c.ban : "Ban";
+  unban.hidden = c.unban === 0;
+  unban.textContent = "Unban " + c.unban;
   const all = visibleSelectable();
   const allOn = all.length > 0 && all.every(d => selected.has(d.code));
   const sa = qs("#sel-all");
-  sa.textContent = allOn ? "Kosongkan" : "Pilih semua";
+  sa.textContent = allOn ? "Kosongkan" : "Semua";
   sa.disabled = all.length === 0;
 }
 
@@ -543,57 +555,89 @@ function selectAllVisible() {
   updateSelBar();
 }
 
+// Jalankan aksi per perangkat berkelompok (5 sekaligus), tampilkan progres di tombol modal; kembalikan kode yang gagal
+async function runBatch(codes, worker) {
+  const ok = qs("#m-ok"), failed = [];
+  let done = 0;
+  for (let i = 0; i < codes.length; i += 5) {
+    const chunk = codes.slice(i, i + 5);
+    const res = await Promise.allSettled(chunk.map(worker));
+    res.forEach((r, k) => { if (r.status === "rejected") failed.push(chunk[k]); });
+    done += chunk.length;
+    ok.textContent = "Memproses " + done + "/" + codes.length + "...";
+  }
+  return failed;
+}
+
+function selChipsHtml(codes) {
+  const names = codes.map(c => { const d = findDevice(c); return d ? deviceName(d) : c; });
+  return '<div class="mb-chips">' + names.slice(0, 6).map(n => '<span class="mb-chip">' + h(n) + '</span>').join("") +
+    (names.length > 6 ? '<span class="mb-chip more">+' + (names.length - 6) + ' lainnya</span>' : "") + '</div>';
+}
+
+// Setelah batch: kalau pilihan habis keluar dari mode pilih, kalau masih ada sisa (campuran ban/unban) tetap di mode pilih
+function finishBatch(failed, total) {
+  render();
+  refresh();
+  updateSelBar();
+  if (failed.length) throw new Error(failed.length + " dari " + total + " perangkat gagal diproses");
+  if (!selected.size) setSelectMode(false); else { render(); updateSelBar(); }
+}
+
 function openMassBan() {
-  const codes0 = [...selected].filter(c => !PROTECTED_CODES.has(c));
+  const codes0 = [...selected].filter(c => !PROTECTED_CODES.has(c) && !(findDevice(c) || {}).banned);
   if (!codes0.length) return;
-  const names = codes0.map(c => { const d = findDevice(c); return d ? deviceName(d) : c; });
-  const shownNames = names.slice(0, 6).map(n => '<span class="mb-chip">' + h(n) + '</span>').join("") +
-    (names.length > 6 ? '<span class="mb-chip more">+' + (names.length - 6) + ' lainnya</span>' : "");
   openModal({
     title: "Ban " + codes0.length + " perangkat",
     cls: "danger",
     okText: "Ban " + codes0.length + " perangkat",
     body:
       '<p>Pesan ban yang sama dikirim ke semua perangkat terpilih. Semuanya langsung terkunci saat ujian.</p>' +
-      '<div class="mb-chips">' + shownNames + '</div>' +
-      tplFieldHtml(""),
+      selChipsHtml(codes0) + tplFieldHtml(""),
     onConfirm: async () => {
       // Dibaca ulang saat konfirmasi: kalau sebagian gagal lalu dicoba lagi, hanya yang gagal yang diproses
       const codes = [...selected].filter(c => !PROTECTED_CODES.has(c) && !(findDevice(c) || {}).banned);
       const message = qs("#m-msg").value.trim();
-      const ok = qs("#m-ok");
-      const failed = [];
-      let done = 0;
-      for (let i = 0; i < codes.length; i += 5) {
-        const chunk = codes.slice(i, i + 5);
-        const res = await Promise.allSettled(chunk.map(async code => {
-          const ts = nowMs();
-          await jf(BANS + "/" + encodeURIComponent(code) + ".json", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json; charset=utf-8" },
-            body: JSON.stringify({ banned: true, message, since: ts })
-          });
-          await logBanMsg(code, message, "ban");
-          const d = findDevice(code);
-          if (d) { d.banned = true; d.banSince = ts; d.banSinceEst = false; }
-          selected.delete(code);
-        }));
-        res.forEach((r, k) => { if (r.status === "rejected") failed.push(chunk[k]); });
-        done += chunk.length;
-        ok.textContent = "Memproses " + done + "/" + codes.length + "...";
-      }
-      render();
-      refresh();
-      if (failed.length) {
-        updateSelBar();
-        throw new Error(failed.length + " dari " + codes.length + " perangkat gagal di-ban");
-      }
-      selectMode = false;
-      updateSelBar();
-      render();
+      const failed = await runBatch(codes, async code => {
+        const ts = nowMs();
+        await jf(BANS + "/" + encodeURIComponent(code) + ".json", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+          body: JSON.stringify({ banned: true, message, since: ts })
+        });
+        await logBanMsg(code, message, "ban");
+        const d = findDevice(code);
+        if (d) { d.banned = true; d.banSince = ts; d.banSinceEst = false; }
+        selected.delete(code);
+      });
+      finishBatch(failed, codes.length);
     }
   });
   bindTemplates("");
+}
+
+function openMassUnban() {
+  const codes0 = [...selected].filter(c => (findDevice(c) || {}).banned);
+  if (!codes0.length) return;
+  openModal({
+    title: "Unban " + codes0.length + " perangkat",
+    center: true,
+    cls: "ok",
+    okText: "Unban " + codes0.length + " perangkat",
+    body: '<p>Semua perangkat terpilih bisa dipakai ujian lagi.</p>' + selChipsHtml(codes0),
+    onConfirm: async () => {
+      const codes = [...selected].filter(c => (findDevice(c) || {}).banned);
+      const failed = await runBatch(codes, async code => {
+        const d = findDevice(code);
+        const info = d && d.banned ? { since: d.banSince || 0, est: !!d.banSinceEst, message: d.banMsg || "" } : null;
+        await jf(BANS + "/" + encodeURIComponent(code) + ".json", { method: "DELETE" });
+        if (info) await logUnban(code, info, nowMs());
+        if (d) { d.banned = false; d.banSince = 0; d.banSinceEst = false; }
+        selected.delete(code);
+      });
+      finishBatch(failed, codes.length);
+    }
+  });
 }
 
 // Device yang tidak boleh di-ban (cuma di frontend). Kalau sudah terlanjur banned, tetap bisa di-unban.
@@ -1519,6 +1563,7 @@ function showDash() {
       '<button class="cab-x" type="button" id="sel-cancel" aria-label="Keluar dari mode pilih" title="Keluar dari mode pilih">' + ICON_X + '</button>' +
       '<div class="cab-title" id="sel-count">0 dipilih</div>' +
       '<button class="cab-link" type="button" id="sel-all">Pilih semua</button>' +
+      '<button class="cab-unban" type="button" id="sel-unban" hidden>Unban</button>' +
       '<button class="cab-ban" type="button" id="sel-ban" disabled>Ban</button>' +
     '</div>';
 
@@ -1529,6 +1574,7 @@ function showDash() {
   qs("#sel-cancel").addEventListener("click", () => setSelectMode(false));
   qs("#sel-all").addEventListener("click", selectAllVisible);
   qs("#sel-ban").addEventListener("click", openMassBan);
+  qs("#sel-unban").addEventListener("click", openMassUnban);
   qs("#ghist").addEventListener("click", openGlobalHistory);
   qs("#grid").addEventListener("click", function () {
     gridMode = !gridMode;
