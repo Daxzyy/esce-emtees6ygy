@@ -832,6 +832,7 @@ function openBanMsg(code) {
 
 let globalHistTimer = null; // interval panel riwayat global, jalan cuma selagi modalnya kebuka
 let ghistKnownTotal = 0;     // jumlah entri /ban_history terakhir yang diketahui (dari refresh() atau panel)
+let ghistSeenAtOpen = 0;     // jumlah entri yang sudah "dilihat" sebelum panel sesi ini dibuka, buat nandain mana yang baru
 const GHIST_SEEN_KEY = "ujian_admin_ghist_seen";
 
 // Hitung total entri di seluruh /ban_history (semua kode digabung)
@@ -935,13 +936,16 @@ async function openHistory(code) {
 
 
 // Riwayat ban versi global: gabungan semua kode di /ban_history, realtime selagi panelnya kebuka
-function ghistItemHtml(item, now) {
+function ghistItemHtml(item, now, isNew) {
   const d = findDevice(item.code);
   const name = d ? deviceName(d) : item.code;
-  return '<div class="tl-item">' +
+  return '<div class="tl-item' + (isNew ? ' is-new' : '') + '">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
     '<div class="tl-head"><span class="tl-dev">' + h(name) + '</span>' +
-    '<span class="tl-tag">' + h(item.type === "edit" ? "Diedit" : "Ban") + '</span></div>' +
+    '<span class="tl-tags">' +
+    (isNew ? '<span class="tl-tag new">Baru</span>' : '') +
+    '<span class="tl-tag">' + h(item.type === "edit" ? "Diedit" : "Ban") + '</span>' +
+    '</span></div>' +
     '<div class="tl-meta"><span class="tl-time">' + h(fmtShort(item.at, now)) + '</span></div>' +
     '<div class="tl-pre"><pre class="tl-msg">' + h(item.message) + '</pre>' +
     '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div></div>';
@@ -975,10 +979,12 @@ async function renderGlobalHistoryNow() {
     return;
   }
   const now = nowMs();
-  box2.innerHTML = '<div class="tl">' + items.map(x => ghistItemHtml(x, now)).join("") + '</div>';
+  const newCount = Math.max(0, ghistKnownTotal - ghistSeenAtOpen); // entri yang masuk sejak sesi panel ini terakhir dibuka
+  box2.innerHTML = '<div class="tl">' + items.map((x, i) => ghistItemHtml(x, now, i < newCount)).join("") + '</div>';
 }
 
 function openGlobalHistory() {
+  ghistSeenAtOpen = Number(store.get(GHIST_SEEN_KEY)) || 0; // simpan dulu sebelum ke-overwrite di markGhistSeen()
   openModal({
     title: "Riwayat ban (semua perangkat)",
     center: true,

@@ -376,6 +376,9 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .tl-tag.now { background: var(--danger-bg); border-color: transparent; color: var(--danger-text); }
 .tl-time { font-size: 12px; line-height: 20px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tl-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+.tl-tags { display: flex; align-items: center; gap: 6px; flex: none; }
+.tl-item.is-new .tl-dot { background: var(--ok); opacity: 1; box-shadow: 0 0 0 3px var(--ok-bg); }
+.tl-tag.new { background: var(--ok-bg); border-color: transparent; color: var(--ok); }
 .tl-dev { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; color: var(--text); }
 .tl-pre { position: relative; }
 .modal .tl-msg { margin: 0; padding: 8px 34px 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
