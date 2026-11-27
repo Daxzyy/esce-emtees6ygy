@@ -298,6 +298,7 @@ async function refresh() {
     const banMap = bans && typeof bans === "object" ? bans : {};
     ghistKnownTotal = countBanHistory(ghist);
     updateGhistBadge();
+    notifyBanChanges(devs || {}, banMap);
     devices = Object.entries(devs || {}).map(([code, v]) => {
       const ban = banMap[code];
       const banMsg = ban && typeof ban === "object" && typeof ban.message === "string" ? ban.message : "";
@@ -834,6 +835,56 @@ let globalHistTimer = null; // interval panel riwayat global, jalan cuma selagi 
 let ghistKnownTotal = 0;     // jumlah entri /ban_history terakhir yang diketahui (dari refresh() atau panel)
 let ghistSeenAtOpen = 0;     // jumlah entri yang sudah "dilihat" sebelum panel sesi ini dibuka, buat nandain mana yang baru
 const GHIST_SEEN_KEY = "ujian_admin_ghist_seen";
+
+/* ===================== Toast realtime ban/unban ===================== */
+// Baseline status banned tiap kode, dibandingkan tiap refresh() buat nangkep transisi.
+// null di awal = sesi baru dimulai, jangan toast histori lama; begitu session berjalan baru mulai dibandingkan.
+let bannedBaseline = null;
+
+function ensureToastRoot() {
+  let root = qs("#toast-root");
+  if (!root) {
+    root = document.createElement("div");
+    root.id = "toast-root";
+    root.setAttribute("aria-live", "polite");
+    document.body.appendChild(root);
+  }
+  return root;
+}
+
+function dismissToast(el) {
+  if (!el || el.dataset.leaving) return;
+  el.dataset.leaving = "1";
+  clearTimeout(el._t);
+  el.classList.add("leaving");
+  el.addEventListener("animationend", () => el.remove(), { once: true });
+}
+
+function showToast(kind, title) {
+  const root = ensureToastRoot();
+  const el = document.createElement("div");
+  el.className = "toast " + kind;
+  el.innerHTML = '<span class="toast-ic">' + (kind === "unban" ? ICON_CHECK : ICON_BAN) + '</span>' +
+    '<div class="toast-title">' + h(title) + '</div>';
+  el.addEventListener("click", () => dismissToast(el));
+  root.appendChild(el);
+  el._t = setTimeout(() => dismissToast(el), 4200);
+}
+
+// Bandingin status banned sekarang vs poll sebelumnya (data Firebase bersama, bukan aksi lokal),
+// jadi toast ini tetap muncul walau yang mem-ban/unban device adalah admin lain di HP lain.
+function notifyBanChanges(devs, banMap) {
+  const nowBanned = new Set(Object.keys(banMap).filter(c => isBanned(banMap[c])));
+  if (bannedBaseline === null) { bannedBaseline = nowBanned; return; }
+  for (const code of nowBanned) {
+    if (!bannedBaseline.has(code)) showToast("ban", deviceName(devs[code] || {}) + " dibanned");
+  }
+  for (const code of bannedBaseline) {
+    if (!nowBanned.has(code)) showToast("unban", deviceName(devs[code] || {}) + " diunban");
+  }
+  bannedBaseline = nowBanned;
+}
+
 
 // Hitung total entri di seluruh /ban_history (semua kode digabung)
 function countBanHistory(data) {

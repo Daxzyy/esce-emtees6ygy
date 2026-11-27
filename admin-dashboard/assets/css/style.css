@@ -298,6 +298,39 @@ textarea.input[readonly] { resize: none; cursor: default; background: var(--surf
       .86 50%, 1.03 58%, 1.1 65%, 1.04 72%, .98 80%, .995 90%, 1);
   }
 }
+
+/* ===== Toast realtime: muncul dari atas, pegas jelly yang sama kayak sentuhan tombol ===== */
+#toast-root {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 0;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto; display: flex; align-items: center; gap: 10px;
+  max-width: 380px; width: 100%; padding: 12px 16px 12px 12px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .2);
+  animation: toast-in .7s var(--spring) both;
+  cursor: pointer;
+}
+.toast.leaving { animation: toast-out .22s ease-in forwards; }
+.toast-ic {
+  flex: none; width: 32px; height: 32px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.toast-ic svg { width: 17px; height: 17px; }
+.toast.ban .toast-ic { background: var(--danger-bg); color: var(--danger-text); }
+.toast.unban .toast-ic { background: var(--ok-bg); color: var(--ok); }
+.toast-title { min-width: 0; flex: 1; font-size: 13.5px; font-weight: 700; color: var(--text); }
+@keyframes toast-in { from { transform: translateY(-140%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes toast-out { to { transform: translateY(-16px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: toast-in-reduced .2s ease-out both; }
+  .toast.leaving { animation: none; opacity: 0; }
+}
+@keyframes toast-in-reduced { from { opacity: 0; } to { opacity: 1; } }
+
 button, .btn, .seg button, .pw-toggle {
   touch-action: manipulation;
   scale: 1 1;
