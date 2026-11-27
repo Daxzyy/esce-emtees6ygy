@@ -1113,19 +1113,74 @@ async function openHistory(code) {
 
 
 // Riwayat ban versi global: gabungan semua kode di /ban_history, realtime selagi panelnya kebuka
-function ghistItemHtml(item, now, isNew) {
+// Info durasi ban buat satu entri riwayat. Semua dari data yang sudah ada:
+//  - unban        : duration/since/est yang dicatat logUnban()
+//  - ban/edit aktif: d.banSince (sama persis dengan timer di badge "Banned"), jalan live
+//  - ban/edit lama : dicocokkan ke catatan unban yang menutup masa ban itu (since <= entri <= unban)
+function ghDurInfo(item, d, all) {
+  if (item.type === "unban") {
+    const since = Number(item.since) || 0;
+    if (!since) return { since: 0, none: true }; // sama seperti lamaBanHtml: tanpa "since" = lama ban tidak tercatat
+    return { since, dur: Number(item.duration) || 0, est: !!item.est, live: false };
+  }
+  const at = Number(item.at) || 0;
+  if (d && d.banned && d.banSince && at >= d.banSince - 5000) return { since: d.banSince, est: !!d.banSinceEst, live: true };
+  let best = null;
+  for (const u of all || []) {
+    if (u.code !== item.code || u.type !== "unban") continue;
+    const ua = Number(u.at) || 0, us = Number(u.since) || 0;
+    if (!us || ua < at || us > at + 5000) continue;
+    if (!best || ua < (Number(best.at) || 0)) best = u;
+  }
+  if (best) return { since: Number(best.since) || 0, dur: Number(best.duration) || 0, est: !!best.est, live: false };
+  return { since: item.type === "ban" ? at : 0, none: true };
+}
+
+function ghDurHtml(item, d, now, all) {
+  const i = ghDurInfo(item, d, all);
+  const start = i.since ? fmtShort(i.since, now).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase()) : "";
+  const est = i.est ? "\u2248 " : "";
+  let k = "Lama ban", v;
+  if (i.live) {
+    k = "Durasi berjalan";
+    v = '<b class="gh-dur-v" data-since="' + i.since + '"' + (i.est ? ' data-est="1"' : '') + '>' + h(est + fmtDur(now - i.since)) + '</b>';
+  } else if (i.none) {
+    v = '<b class="gh-dur-v">Tidak tercatat</b>';
+  } else {
+    v = '<b class="gh-dur-v">' + h(est + fmtDur(i.dur)) + '</b>';
+  }
+  return '<div class="gh-dur' + (i.live ? ' live' : '') + (i.none ? ' none' : '') + '">' +
+    '<span class="gh-dur-ic" aria-hidden="true">' + ICON_TIMER + '</span>' +
+    '<div class="gh-dur-body"><span class="gh-dur-k">' + k + '</span>' + v +
+    (start ? '<span class="gh-dur-s">Dimulai ' + h(start) + '</span>' : '') + '</div></div>';
+}
+
+// Keterangan aktivitas: panel bersarang (ikon + judul + isi pesan asli, tetap ada tombol salin)
+function ghPanelHtml(kind, msg) {
+  if (!msg) return "";
+  const t = { ban: [ICON_LOCK, "Keterangan ban"], edit: [ICON_PENCIL, "Keterangan diperbarui"], unban: [ICON_CHECK, "Keterangan saat di-unban"] }[kind] || [ICON_LOCK, "Keterangan"];
+  return '<div class="gh-panel"><div class="gh-ph">' + t[0] + '<span>' + h(t[1]) + '</span></div>' + preHtml(msg) + '</div>';
+}
+
+function ghistItemHtml(item, now, isNew, all) {
   const d = findDevice(item.code);
   const name = d ? deviceName(d) : item.code;
   const owner = d && d.owner ? d.owner : "";
   const kind = item.type === "edit" ? "edit" : item.type === "unban" ? "unban" : "ban";
-  return '<div class="tl-item' + (isNew ? ' is-new' : '') + '">' +
+  return '<div class="tl-item gh-item k-' + kind + (isNew ? ' is-new' : '') + '">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
-    '<div class="tl-head"><span class="tl-name">' + h(name) + '</span>' +
-    (owner ? '<span class="tl-owner" title="Label pemilik">' + ICON_USER + '<span>' + h(owner) + '</span></span>' : '') + '</div>' +
-    '<div class="tl-meta"><span class="tl-time-ic" aria-hidden="true">' + ICON_HISTORY + '</span><span class="tl-time">' + h(fmtShort(item.at, now)) + '</span>' +
-    '<code class="tl-code">' + h(item.code) + '</code>' +
-    '<span class="tl-tags">' + (isNew ? tagHtml("new") : "") + tagHtml(kind) + '</span></div>' +
-    (kind === "unban" ? lamaBanHtml(item) : "") + preHtml(item.message) + '</div>';
+    '<article class="gh-card">' +
+      '<div class="gh-head">' +
+        '<div class="gh-who"><span class="tl-name gh-name">' + h(name) + '</span>' +
+          (owner ? '<span class="tl-owner" title="Label pemilik">' + ICON_USER + '<span>' + h(owner) + '</span></span>' : '') + '</div>' +
+        '<div class="gh-badges">' + (isNew ? tagHtml("new") : "") + tagHtml(kind) + '</div>' +
+      '</div>' +
+      '<div class="gh-info">' +
+        '<span class="gh-i" title="Waktu kejadian">' + ICON_HISTORY + '<span>' + h(fmtShort(item.at, now)) + '</span></span>' +
+        '<span class="gh-i" title="ID perangkat">' + ICON_HASH + '<code>' + h(item.code) + '</code></span>' +
+      '</div>' +
+      ghDurHtml(item, d, now, all) + ghPanelHtml(kind, item.message) +
+    '</article></div>';
 }
 
 async function renderGlobalHistoryNow() {
@@ -1157,18 +1212,18 @@ async function renderGlobalHistoryNow() {
   }
   const now = nowMs();
   const newCount = Math.max(0, ghistKnownTotal - ghistSeenAtOpen); // entri yang masuk sejak sesi panel ini terakhir dibuka
-  box2.innerHTML = '<div class="tl">' + items.map((x, i) => ghistItemHtml(x, now, i < newCount)).join("") + '</div>';
+  box2.innerHTML = '<div class="tl gtl">' + items.map((x, i) => ghistItemHtml(x, now, i < newCount, items)).join("") + '</div>';
 }
 
 function openGlobalHistory() {
   ghistSeenAtOpen = Number(store.get(GHIST_SEEN_KEY)) || 0; // simpan dulu sebelum ke-overwrite di markGhistSeen()
   openModal({
-    title: "Riwayat ban (semua perangkat)",
+    title: "Riwayat Ban",
     center: true,
     cls: "ok",
     okText: "Tutup",
     noCancel: true,
-    body: '<div class="hist-list" id="m-ghist"><p class="hist-empty">Memuat...</p></div>',
+    body: '<p class="hist-sub gh-sub">Semua perangkat</p><div class="hist-list" id="m-ghist"><p class="hist-empty">Memuat...</p></div>',
     onConfirm: async () => {}
   });
   markGhistSeen(); // dibuka = dianggap sudah dibaca, badge langsung hilang
@@ -1229,6 +1284,7 @@ const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const ICON_TIMER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5"/></svg>';
 const ICON_HISTORY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>';
+const ICON_HASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/></svg>';
 const ICON_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
 const ICON_BAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';
 const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>';
