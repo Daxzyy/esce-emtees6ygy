@@ -152,6 +152,22 @@ function fmtDurClock(ms) {
   return pad(hr) + ":" + pad(m) + ":" + pad(s);
 }
 
+// Durasi bahasa manusia buat modal Riwayat Ban global: "30 detik", "1 menit 30 detik",
+// "2 jam 28 menit 24 detik", "1 hari 3 jam". Satuan bernilai 0 tidak ditampilkan;
+// detik disembunyikan kalau sudah >= 1 hari (sama seperti fmtDur). Hitungannya sama persis dengan fmtDur.
+function fmtDurHuman(ms) {
+  let s = Math.floor(Math.max(0, Number(ms) || 0) / 1000);
+  const d = Math.floor(s / 86400); s -= d * 86400;
+  const hr = Math.floor(s / 3600); s -= hr * 3600;
+  const m = Math.floor(s / 60); s -= m * 60;
+  const out = [];
+  if (d) out.push(d + " hari");
+  if (hr) out.push(hr + " jam");
+  if (m) out.push(m + " menit");
+  if (s && !d) out.push(s + " detik");
+  return out.length ? out.join(" ") : "0 detik";
+}
+
 function fmtClock(ms) {
   const d = new Date(ms);
   const parts = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(d);
@@ -590,7 +606,7 @@ function tickDur() {
   document.querySelectorAll("[data-since]").forEach(el => {
     const t = Number(el.dataset.since);
     if (!t) return;
-    const txt = (el.dataset.est ? "\u2248 " : "") + (el.dataset.fmt === "clock" ? fmtDurClock : fmtDur)(now - t);
+    const txt = (el.dataset.est ? "\u2248 " : "") + (el.dataset.fmt === "clock" ? fmtDurClock : el.dataset.fmt === "human" ? fmtDurHuman : fmtDur)(now - t);
     if (el.textContent !== txt) el.textContent = txt;
   });
 }
@@ -1136,30 +1152,56 @@ function ghDurInfo(item, d, all) {
   return { since: item.type === "ban" ? at : 0, none: true };
 }
 
+// "Hari ini 14.10" -> "pukul 14.10", "Kemarin 20.10" -> "kemarin pukul 20.10", "23 Nov 09.02" -> "23 Nov pukul 09.02"
+function ghStartText(ts, now) {
+  return fmtShort(ts, now).replace(/^Hari ini /, "").replace(/^Kemarin /, "kemarin ").replace(/(\d{2}\.\d{2})$/, "pukul $1");
+}
+
 function ghDurHtml(item, d, now, all) {
   const i = ghDurInfo(item, d, all);
-  const start = i.since ? fmtShort(i.since, now).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase()) : "";
   const est = i.est ? "\u2248 " : "";
-  let k = "Lama ban", v;
+  const at = Number(item.at) || 0;
+  // "Dimulai" cuma buat ban aktif, atau entri ban/edit lama yang waktu mulainya beda dari waktu entri itu sendiri.
+  // Entri Di-unban nggak menampilkannya: waktu unban sudah ada di atas, lama ban-nya sudah ada di sini.
+  const showStart = !!i.since && item.type !== "unban" && (i.live || Math.abs(i.since - at) > 60000);
+  let v;
   if (i.live) {
-    k = "Durasi berjalan";
-    v = '<b class="gh-dur-v" data-since="' + i.since + '"' + (i.est ? ' data-est="1"' : '') + '>' + h(est + fmtDur(now - i.since)) + '</b>';
+    v = '<b class="gh-dur-v"><span class="gh-dur-pre">Berjalan selama </span><span data-since="' + i.since + '" data-fmt="human"' + (i.est ? ' data-est="1"' : '') + '>' + h(est + fmtDurHuman(now - i.since)) + '</span></b>';
   } else if (i.none) {
     v = '<b class="gh-dur-v">Tidak tercatat</b>';
   } else {
-    v = '<b class="gh-dur-v">' + h(est + fmtDur(i.dur)) + '</b>';
+    v = '<b class="gh-dur-v">' + h(est + fmtDurHuman(i.dur)) + '</b>';
   }
   return '<div class="gh-dur' + (i.live ? ' live' : '') + (i.none ? ' none' : '') + '">' +
     '<span class="gh-dur-ic" aria-hidden="true">' + ICON_TIMER + '</span>' +
-    '<div class="gh-dur-body"><span class="gh-dur-k">' + k + '</span>' + v +
-    (start ? '<span class="gh-dur-s">Dimulai ' + h(start) + '</span>' : '') + '</div></div>';
+    '<div class="gh-dur-body"><span class="gh-dur-k">Lama ban</span>' + v +
+    (showStart ? '<span class="gh-dur-s">Dimulai ' + h(ghStartText(i.since, now)) + '</span>' : '') + '</div></div>';
 }
 
-// Keterangan aktivitas: panel bersarang (ikon + judul + isi pesan asli, tetap ada tombol salin)
+// Pesan ban dipecah buat tampilan: baris pertama = judul aktivitas, sisanya = deskripsi.
+// Kalau cuma satu baris atau baris pertamanya panjang (bukan judul), seluruh teks jadi deskripsi.
+// Isi aslinya tidak diubah: tombol salin tetap menyalin pesan utuh.
+function ghSplitMsg(msg) {
+  const lines = String(msg).replace(/\r\n?/g, "\n").split("\n");
+  const i = lines.findIndex(l => l.trim());
+  const all = lines.join("\n").trim();
+  if (i < 0) return { title: "", desc: "" };
+  const first = lines[i].trim();
+  const rest = lines.slice(i + 1).join("\n").replace(/^(?:[ \t]*\n)+/, "").replace(/\s+$/, "");
+  if (!rest || first.length > 90) return { title: "", desc: all };
+  return { title: first, desc: rest };
+}
+
+// Keterangan aktivitas: kartu informasi minimal (ikon + judul kecil + tombol salin, lalu judul aktivitas dan deskripsi)
 function ghPanelHtml(kind, msg) {
   if (!msg) return "";
   const t = { ban: [ICON_LOCK, "Keterangan ban"], edit: [ICON_PENCIL, "Keterangan diperbarui"] }[kind] || [ICON_LOCK, "Keterangan"];
-  return '<div class="gh-panel"><div class="gh-ph">' + t[0] + '<span>' + h(t[1]) + '</span></div>' + preHtml(msg) + '</div>';
+  const p = ghSplitMsg(msg);
+  return '<div class="gh-panel"><div class="gh-ph">' + t[0] + '<span>' + h(t[1]) + '</span>' +
+    '<pre class="tl-msg" hidden>' + h(msg) + '</pre>' +
+    '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div>' +
+    (p.title ? '<div class="gh-pt">' + h(p.title) + '</div>' : '') +
+    (p.desc ? '<div class="gh-pd">' + h(p.desc) + '</div>' : '') + '</div>';
 }
 
 function ghistItemHtml(item, now, isNew, all) {
