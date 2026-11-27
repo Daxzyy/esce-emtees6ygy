@@ -420,7 +420,7 @@ function gridCardHtml(d, now) {
     '</div>' +
     '<div class="g-bd">' +
       '<div class="g-title">' + (d.image ? '<img class="device-thumb g-thumb" src="' + h(d.image) + '" alt="' + h(d.name) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : "") +
-      '<div class="g-title-text"><h3 class="name">' + h(d.name) + '</h3>' + (d.model ? '<div class="g-model">' + h(d.model) + '</div>' : '') + '</div></div>' +
+      '<div class="g-title-text"><div class="name-line"><h3 class="name">' + h(d.name) + '</h3><span class="name-id">&middot; ' + h(d.code) + '</span></div>' + (d.model ? '<div class="g-model">' + h(d.model) + '</div>' : '') + '</div></div>' +
       '<button class="g-owner' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + code + '" aria-label="Edit label pemilik" title="Edit label pemilik">' + ICON_USER + '<span>' + h(d.owner || "Tambah label") + '</span>' + ICON_PENCIL + '</button>' +
       quote +
       '<div class="g-id"><span class="id-chip"><code>' + code + '</code>' +
@@ -451,7 +451,7 @@ function cardHtml(d, now) {
     '<div class="card-head">' +
       '<div class="ident">' +
       '<div class="name-row">' + (d.image ? '<img class="device-thumb" src="' + h(d.image) + '" alt="' + h(d.name) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'">' : "") +
-      '<div class="name-block"><h3 class="name">' + h(d.name) + '</h3>' + (d.model ? '<div class="model">' + h(d.model) + '</div>' : '') +
+      '<div class="name-block"><div class="name-line"><h3 class="name">' + h(d.name) + '</h3><span class="name-id">&middot; ' + h(d.code) + '</span></div>' + (d.model ? '<div class="model">' + h(d.model) + '</div>' : '') +
       '<div class="meta-row"><button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button>' + presence + banned + '</div></div></div>' +
       (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p>' : '') +
