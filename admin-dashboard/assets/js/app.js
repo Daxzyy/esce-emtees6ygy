@@ -1001,13 +1001,13 @@ function ghistItemHtml(item, now, isNew) {
   const owner = d && d.owner ? d.owner : "";
   return '<div class="tl-item' + (isNew ? ' is-new' : '') + '">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
-    '<div class="tl-head"><span class="tl-dev">' + h(name) + (owner ? '<span class="tl-owner">&middot; ' + h(owner) + '</span>' : '') + '</span>' +
+    '<div class="tl-head"><span class="tl-dev"><span class="tl-name">' + h(name) + '</span>' + (owner ? '<span class="tl-owner">&middot; ' + h(owner) + '</span>' : '') + '</span>' +
     '<code class="tl-code">' + h(item.code) + '</code>' +
     '<span class="tl-tags">' +
     (isNew ? '<span class="tl-tag new">Baru</span>' : '') +
     '<span class="tl-tag">' + h(item.type === "edit" ? "Diedit" : "Ban") + '</span>' +
     '</span></div>' +
-    '<div class="tl-meta"><span class="tl-time">' + h(fmtShort(item.at, now)) + '</span></div>' +
+    '<div class="tl-meta"><span class="tl-time-ic" aria-hidden="true">' + ICON_HISTORY + '</span><span class="tl-time">' + h(fmtShort(item.at, now)) + '</span></div>' +
     '<div class="tl-pre"><pre class="tl-msg">' + h(item.message) + '</pre>' +
     '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div></div>';
 }
