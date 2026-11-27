@@ -775,3 +775,7 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 
 /* Tombol Pilih (ban massal) di baris pencarian, sejajar dengan kolom cari */
 .toolbar .sel-btn { flex: none; width: 46px; height: 46px; }
+
+/* Ikon Pilih lebih besar dan garis lebih tebal supaya jelas terlihat */
+.toolbar .sel-btn svg { width: 26px; height: 26px; }
+.toolbar .sel-btn svg path { stroke-width: 1.9; }
