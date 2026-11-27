@@ -870,7 +870,7 @@ function showToast(kind, title) {
     '<div class="toast-title">' + h(title) + '</div>';
   el.addEventListener("click", () => dismissToast(el));
   root.appendChild(el);
-  el._t = setTimeout(() => dismissToast(el), 4200);
+  el._t = setTimeout(() => dismissToast(el), 2800);
   // Kalau lagi ada ledakan event (spam ban/unban beruntun), paksa toast paling lama
   // langsung keluar duluan supaya jumlah yang tampil bareng tetap terbatas.
   const live = Array.from(root.querySelectorAll(".toast:not(.leaving)"));
