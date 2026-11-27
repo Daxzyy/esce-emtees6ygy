@@ -121,6 +121,19 @@ function fmtShort(ts, now) {
   return p.day + " " + MONTHS[p.month - 1] + " " + p.year + ", " + t;
 }
 
+// Durasi live: "5 dtk", "14 mnt 05 dtk", "2 jam 14 mnt 05 dtk", "3 hari 4 jam 14 mnt"
+// (detik disembunyikan kalau sudah >= 1 hari)
+function fmtDur(ms) {
+  let s = Math.floor(Math.max(0, Number(ms) || 0) / 1000);
+  const d = Math.floor(s / 86400); s -= d * 86400;
+  const hr = Math.floor(s / 3600); s -= hr * 3600;
+  const m = Math.floor(s / 60); s -= m * 60;
+  if (d > 0) return d + " hari " + hr + " jam " + pad(m) + " mnt";
+  if (hr > 0) return hr + " jam " + pad(m) + " mnt " + pad(s) + " dtk";
+  if (m > 0) return m + " mnt " + pad(s) + " dtk";
+  return s + " dtk";
+}
+
 function fmtClock(ms) {
   const d = new Date(ms);
   const parts = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(d);
@@ -299,10 +312,14 @@ async function refresh() {
     ghistKnownTotal = countBanHistory(ghist);
     updateGhistBadge();
     notifyBanChanges(devs || {}, banMap);
+    const banEst = lastBanAtMap(ghist);
     devices = Object.entries(devs || {}).map(([code, v]) => {
       const ban = banMap[code];
       const banMsg = ban && typeof ban === "object" && typeof ban.message === "string" ? ban.message : "";
-      return Object.assign({}, v && typeof v === "object" ? v : {}, { code, banned: isBanned(ban), banMsg, owner: typeof ownerMap[code] === "string" ? ownerMap[code] : "" });
+      // since = waktu ban dimulai (ditulis dashboard pas Ban). Ban lama belum punya: tebak dari riwayat pesan.
+      const real = ban && typeof ban === "object" && Number(ban.since) > 0 ? Number(ban.since) : 0;
+      const est = !real && isBanned(ban) ? (banEst[code] || 0) : 0;
+      return Object.assign({}, v && typeof v === "object" ? v : {}, { code, banned: isBanned(ban), banMsg, banSince: real || est, banSinceEst: !real && !!est, owner: typeof ownerMap[code] === "string" ? ownerMap[code] : "" });
     });
     loaded = true;
     loadError = "";
@@ -334,7 +351,7 @@ function setConn(ok) { connOk = ok; renderConn(); }
 function decorate(r, now) {
   const ls = Number(r.lastSeen) || 0;
   const online = ls > 0 && Math.abs(now - ls) <= ONLINE_MS;
-  return { r, code: r.code, name: deviceName(r), model: modelCode(r), image: deviceImage(r), owner: r.owner || "", ls, online, banned: !!r.banned, banMsg: r.banMsg || "" };
+  return { r, code: r.code, name: deviceName(r), model: modelCode(r), image: deviceImage(r), owner: r.owner || "", ls, online, banned: !!r.banned, banMsg: r.banMsg || "", since: r.banSince || 0, sinceEst: !!r.banSinceEst };
 }
 
 function matchesQuery(d) {
@@ -424,6 +441,7 @@ function gridCardHtml(d, now) {
       '<div class="g-title-text"><div class="name-line"><h3 class="name">' + h(d.name) + '</h3></div>' + (d.model ? '<div class="g-model">' + h(d.model) + '</div>' : '') + '</div></div>' +
       '<button class="g-owner' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + code + '" aria-label="Edit label pemilik" title="Edit label pemilik">' + ICON_USER + '<span>' + h(d.owner || "Tambah label") + '</span>' + ICON_PENCIL + '</button>' +
       quote +
+      (d.banned ? '<div class="g-dur">' + durChipHtml(d.banned, d.since, d.sinceEst) + '</div>' : '') +
       '<div class="g-id"><span class="id-chip"><code>' + code + '</code>' +
         '<button class="copy-btn" type="button" data-act="copy" data-code="' + code + '" aria-label="Salin ID" title="Salin ID">' + ICON_COPY + '</button></span></div>' +
     '</div>' +
@@ -455,7 +473,7 @@ function cardHtml(d, now) {
       '<div class="name-block"><div class="name-line"><h3 class="name">' + h(d.name) + '</h3></div>' + (d.model ? '<div class="model">' + h(d.model) + '</div>' : '') +
       '<div class="meta-row"><button class="owner-chip' + (d.owner ? '' : ' empty') + '" type="button" data-act="owner" data-code="' + h(d.code) + '" aria-label="Edit label pemilik" title="Edit label pemilik">' +
       ICON_PENCIL + '<span>' + h(d.owner || "Label") + '</span></button>' + presence + banned + '</div></div></div>' +
-      (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p>' : '') +
+      (d.banned ? '<p class="ban-msg-row">' + banMsgChip + '</p><p class="ban-dur-row">' + durChipHtml(d.banned, d.since, d.sinceEst) + '</p>' : '') +
       '</div>' +
       ringHtml(r, d.online) +
     '</div>' +
@@ -538,6 +556,26 @@ function render() {
   } else {
     st.hidden = true;
   }
+  tickDur();
+}
+
+// Durasi ban realtime: elemen [data-since] diisi dari sini tiap detik. Isi kartu sendiri nggak
+// berubah tiap detik, jadi kartu nggak dirender ulang (tombol/hover tidak ke-reset).
+function tickDur() {
+  const now = nowMs();
+  document.querySelectorAll("[data-since]").forEach(el => {
+    const t = Number(el.dataset.since);
+    if (!t) return;
+    const txt = (el.dataset.est ? "\u2248 " : "") + fmtDur(now - t);
+    if (el.textContent !== txt) el.textContent = txt;
+  });
+}
+
+function durChipHtml(banned, since, est) {
+  if (!banned) return "";
+  if (!since) return '<span class="ban-dur none">' + ICON_TIMER + '<span class="bd-l">Durasi ban belum tercatat</span></span>';
+  return '<span class="ban-dur' + (est ? ' est' : '') + '" title="' + h((est ? "Perkiraan, sejak " : "Diban sejak ") + fmtDate(since, nowMs()).replace(/^(Hari ini|Kemarin)/, m => m.toLowerCase())) + '">' + ICON_TIMER +
+    '<span class="bd-l">Diban</span><b class="bd-v" data-since="' + since + '"' + (est ? ' data-est="1"' : '') + '></b></span>';
 }
 
 function setText(sel, v) {
@@ -765,13 +803,14 @@ function openBan(code) {
       tplFieldHtml(""),
     onConfirm: async () => {
       const message = qs("#m-msg").value.trim();
+      const ts = nowMs();
       await jf(BANS + "/" + encodeURIComponent(code) + ".json", {
         method: "PUT",
         headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ banned: true, message })
+        body: JSON.stringify({ banned: true, message, since: ts })
       });
       await logBanMsg(code, message, "ban");
-      if (d) d.banned = true;
+      if (d) { d.banned = true; d.banSince = ts; d.banSinceEst = false; }
       render();
       refresh();
     }
@@ -817,10 +856,12 @@ function openBanMsg(code) {
       tplFieldHtml(d ? d.banMsg : ""),
     onConfirm: async () => {
       const message = qs("#m-msg").value.trim();
+      // PUT menimpa seluruh node, jadi "since" asli harus ikut ditulis ulang (jangan reset durasi pas edit pesan)
+      const keep = d && d.banSince && !d.banSinceEst ? { since: d.banSince } : {};
       await jf(BANS + "/" + encodeURIComponent(code) + ".json", {
         method: "PUT",
         headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ banned: true, message })
+        body: JSON.stringify(Object.assign({ banned: true, message }, keep))
       });
       if (!d || d.banMsg !== message) await logBanMsg(code, message, "edit");
       if (d) d.banMsg = message;
@@ -938,11 +979,34 @@ async function logBanMsg(code, message, type) {
   } catch (e) { console.error("riwayat pesan ban gagal dicatat", e); }
 }
 
-function histItemHtml(label, cls, time, msg) {
-  return '<div class="tl-item' + (cls ? ' ' + cls : '') + '">' +
+// Tebakan awal ban buat ban lama yang belum punya "since": entri riwayat (bukan edit) paling baru per kode
+function lastBanAtMap(ghist) {
+  const out = {};
+  if (!ghist || typeof ghist !== "object") return out;
+  for (const code of Object.keys(ghist)) {
+    const rows = ghist[code];
+    if (!rows || typeof rows !== "object") continue;
+    for (const row of Object.values(rows)) {
+      if (!row || row.type === "edit") continue;
+      const at = Number(row.at) || 0;
+      if (at > (out[code] || 0)) out[code] = at;
+    }
+  }
+  return out;
+}
+
+// Label jenis entri riwayat: teks jelas + ikon + warna kontras
+function tagHtml(kind) {
+  const t = { ban: ["Di-ban", ICON_BAN], edit: ["Pesan diedit", ICON_PENCIL], now: ["Sedang aktif", ICON_LOCK], new: ["Baru", ""] }[kind] || ["", ""];
+  return '<span class="tl-tag ' + kind + '">' + t[1] + '<span>' + h(t[0]) + '</span></span>';
+}
+
+function histItemHtml(kind, time, msg, durHtml) {
+  return '<div class="tl-item' + (kind === "now" ? ' now' : '') + '">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
-    '<div class="tl-meta"><span class="tl-tag' + (cls === 'now' ? ' now' : '') + '">' + h(label) + '</span>' +
-    '<span class="tl-time">' + h(time) + '</span></div>' +
+    '<div class="tl-meta">' + tagHtml(kind) +
+    '<span class="tl-time-ic" aria-hidden="true">' + ICON_HISTORY + '</span><span class="tl-time">' + h(time) + '</span></div>' +
+    (durHtml ? '<div class="tl-meta tl-dur">' + durHtml + '</div>' : '') +
     '<div class="tl-pre"><pre class="tl-msg">' + h(msg) + '</pre>' +
     '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div></div>';
 }
@@ -977,20 +1041,21 @@ async function openHistory(code) {
   if (d && d.banned && d.banMsg) {
     // Pesan aktif biasanya = entri terbaru di riwayat: gabung, pakai jam aslinya (tidak dobel)
     if (items.length && items[0].message === d.banMsg) {
-      html += histItemHtml("Aktif sekarang", "now", fmtShort(items[0].at, now), d.banMsg);
+      html += histItemHtml("now", fmtShort(items[0].at, now), d.banMsg, durChipHtml(true, d.banSince, d.banSinceEst));
       items = items.slice(1);
     } else {
-      html += histItemHtml("Aktif sekarang", "now", "Sekarang", d.banMsg);
+      html += histItemHtml("now", "Sekarang", d.banMsg, durChipHtml(true, d.banSince, d.banSinceEst));
     }
   }
   html += items.map(x =>
-    histItemHtml(x.type === "edit" ? "Diedit" : "Ban", "", fmtShort(x.at, now), x.message)
+    histItemHtml(x.type === "edit" ? "edit" : "ban", fmtShort(x.at, now), x.message)
   ).join("");
   if (!html) {
     box.innerHTML = '<p class="hist-empty">' + (failed ? "Gagal memuat riwayat." : "Belum ada riwayat pesan custom.") + '</p>';
     return;
   }
   box.innerHTML = '<div class="tl">' + html + '</div>';
+  tickDur();
 }
 
 
@@ -999,15 +1064,14 @@ function ghistItemHtml(item, now, isNew) {
   const d = findDevice(item.code);
   const name = d ? deviceName(d) : item.code;
   const owner = d && d.owner ? d.owner : "";
+  const kind = item.type === "edit" ? "edit" : "ban";
   return '<div class="tl-item' + (isNew ? ' is-new' : '') + '">' +
     '<span class="tl-dot" aria-hidden="true"></span>' +
-    '<div class="tl-head"><span class="tl-dev"><span class="tl-name">' + h(name) + '</span>' + (owner ? '<span class="tl-owner">&middot; ' + h(owner) + '</span>' : '') + '</span>' +
+    '<div class="tl-head"><span class="tl-name">' + h(name) + '</span>' +
+    (owner ? '<span class="tl-owner" title="Label pemilik">' + ICON_USER + '<span>' + h(owner) + '</span></span>' : '') + '</div>' +
+    '<div class="tl-meta"><span class="tl-time-ic" aria-hidden="true">' + ICON_HISTORY + '</span><span class="tl-time">' + h(fmtShort(item.at, now)) + '</span>' +
     '<code class="tl-code">' + h(item.code) + '</code>' +
-    '<span class="tl-tags">' +
-    (isNew ? '<span class="tl-tag new">Baru</span>' : '') +
-    '<span class="tl-tag">' + h(item.type === "edit" ? "Diedit" : "Ban") + '</span>' +
-    '</span></div>' +
-    '<div class="tl-meta"><span class="tl-time-ic" aria-hidden="true">' + ICON_HISTORY + '</span><span class="tl-time">' + h(fmtShort(item.at, now)) + '</span></div>' +
+    '<span class="tl-tags">' + (isNew ? tagHtml("new") : "") + tagHtml(kind) + '</span></div>' +
     '<div class="tl-pre"><pre class="tl-msg">' + h(item.message) + '</pre>' +
     '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div></div>';
 }
@@ -1108,6 +1172,7 @@ const ICON_ANDROID = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 const ICON_CAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>';
 const ICON_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg>';
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const ICON_TIMER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5"/></svg>';
 const ICON_HISTORY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>';
 const ICON_USER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
 const ICON_BAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';

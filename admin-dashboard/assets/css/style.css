@@ -196,6 +196,17 @@ textarea.input[readonly] { resize: none; cursor: default; background: var(--surf
 .owner-chip.empty { border: 1.5px dashed var(--border); color: var(--muted); font-weight: 500; }
 .owner-chip.empty:hover { border-color: var(--primary); color: var(--primary); }
 .ban-msg-row { margin: 2px 0 0; }
+.ban-dur-row { margin: 6px 0 0; }
+/* Durasi ban realtime (data-since diisi JS tiap detik) */
+.ban-dur { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px 12px 4px 9px; border-radius: 999px; background: var(--danger-bg); color: var(--danger-text); font-size: 12.5px; line-height: 1.25; font-weight: 600; white-space: nowrap; }
+.ban-dur svg { width: 14px; height: 14px; flex: none; }
+.ban-dur .bd-v { font-weight: 800; font-variant-numeric: tabular-nums; }
+.ban-dur.none { background: var(--surface-2); color: var(--muted); font-weight: 500; }
+.g-dur { margin-top: 6px; min-width: 0; }
+/* Kartu grid sempit: chip boleh turun baris (angka durasi di baris bawah) daripada kepotong */
+.g-dur .ban-dur { flex-wrap: wrap; align-items: center; gap: 0 6px; white-space: normal; border-radius: 12px; padding: 5px 10px 5px 9px; font-size: 12px; }
+.g-dur .ban-dur .bd-v, .g-dur .ban-dur .bd-l { white-space: normal; }
+.tl-meta.tl-dur { margin: 0 0 6px; }
 .ban-msg-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 230px; padding: 3px 11px; border: 1.5px solid var(--danger-text); border-radius: 999px; background: transparent; color: var(--danger-text); font-size: 12px; font-weight: 600; cursor: pointer; }
 .ban-msg-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ban-msg-chip svg { flex: none; width: 13px; height: 13px; }
@@ -413,18 +424,25 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 .tl-item:last-child { margin-bottom: 0; }
 .tl-dot { position: absolute; left: -20px; top: 5px; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); opacity: .6; }
 .tl-item.now .tl-dot { background: var(--danger-text); opacity: 1; box-shadow: 0 0 0 3px var(--danger-bg); }
-.tl-meta { display: flex; align-items: center; justify-content: flex-start; gap: 8px; min-height: 20px; margin-bottom: 3px; }
-.tl-tag { flex: none; padding: 0 9px; line-height: 18px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); font-size: 11px; font-weight: 700; }
-.tl-tag.now { background: var(--danger-bg); border-color: transparent; color: var(--danger-text); }
+.tl-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; min-height: 22px; margin-bottom: 4px; }
+/* Label jenis entri: teks jelas, ikon, warna kontras (tiap jenis beda warna) */
+.tl-tag { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px 0 8px; line-height: 22px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.tl-tag svg { width: 12px; height: 12px; flex: none; }
+.tl-tag:not(:has(svg)) { padding-left: 10px; }
+.tl-tag.ban { background: var(--danger-bg); color: var(--danger-text); }
+.tl-tag.edit { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.tl-tag.now { background: var(--danger); color: #fff; }
+:root[data-theme="dark"] .tl-tag.now { color: #2a0a07; }
 .tl-time { font-size: 13px; line-height: 20px; font-weight: 600; color: color-mix(in srgb, var(--muted) 65%, var(--text) 35%); white-space: nowrap; font-variant-numeric: tabular-nums; letter-spacing: .1px; }
-.tl-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
-.tl-tags { display: flex; align-items: center; gap: 6px; flex: none; }
+.tl-head { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-bottom: 3px; }
+.tl-tags { display: flex; align-items: center; gap: 6px; flex: none; margin-left: auto; }
 .tl-item.is-new .tl-dot { background: var(--ok); opacity: 1; box-shadow: 0 0 0 3px var(--ok-bg); }
-.tl-tag.new { background: var(--ok-bg); border-color: transparent; color: var(--ok); }
-.tl-dev { display: flex; align-items: baseline; flex: 1 1 auto; min-width: 0; }
-.tl-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; color: var(--text); }
-.tl-owner { flex: none; margin-left: 6px; font-size: 12px; font-weight: 600; color: var(--primary); white-space: nowrap; }
-.tl-code { flex: none; font-size: 11px; font-weight: 700; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; background: none; }
+.tl-tag.new { background: var(--ok-bg); color: var(--ok); }
+.tl-name { flex: 0 1 auto; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14.5px; font-weight: 700; color: var(--text); }
+/* Label pemilik: chip yang kelihatan jelas, tidak dipotong */
+.tl-owner { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px 0 7px; line-height: 22px; border-radius: 999px; background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.tl-owner svg { width: 13px; height: 13px; flex: none; }
+.tl-code { flex: none; font-size: 11.5px; font-weight: 700; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; background: none; }
 .tl-time-ic { display: inline-flex; flex: none; width: 13px; height: 13px; color: color-mix(in srgb, var(--muted) 65%, var(--text) 35%); }
 .tl-time-ic svg { width: 100%; height: 100%; }
 .tl-pre { position: relative; }
