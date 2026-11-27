@@ -779,3 +779,7 @@ button:not(:disabled):active, .btn:not(:disabled):active, .seg button:active, .p
 /* Ikon Pilih lebih besar dan garis lebih tebal supaya jelas terlihat */
 .toolbar .sel-btn svg { width: 26px; height: 26px; }
 .toolbar .sel-btn svg path { stroke-width: 1.9; }
+
+/* Pill filter tidak boleh menyempit/patah teksnya; kalau tidak muat, pill pindah baris */
+.seg button { flex: none; white-space: nowrap; }
+.seg #sel-all { margin-left: 0; }
