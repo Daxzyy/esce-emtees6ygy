@@ -628,6 +628,7 @@ function lockZoom() {
 function unlockZoom() { if (zoomLock) { zoomLock(); zoomLock = null; } }
 
 function closeModal() {
+  if (globalHistTimer) { clearInterval(globalHistTimer); globalHistTimer = null; }
   const root = qs("#modal-root");
   if (!root || !root.firstChild) return;
   unbindViewport();
@@ -827,6 +828,8 @@ function openBanMsg(code) {
   bindTemplates(d ? d.banMsg : "");
 }
 
+let globalHistTimer = null; // interval panel riwayat global, jalan cuma selagi modalnya kebuka
+
 // Riwayat pesan ban custom: /ban_history/{kode}/{pushId} = { message, at, type }
 // Dicatat cuma kalau pesannya diisi; gagal nyatet tidak membatalkan ban-nya.
 async function logBanMsg(code, message, type) {
@@ -893,6 +896,63 @@ async function openHistory(code) {
     return;
   }
   box.innerHTML = '<div class="tl">' + html + '</div>';
+}
+
+
+// Riwayat ban versi global: gabungan semua kode di /ban_history, realtime selagi panelnya kebuka
+function ghistItemHtml(item, now) {
+  const d = findDevice(item.code);
+  const name = d ? deviceName(d) : item.code;
+  return '<div class="tl-item">' +
+    '<span class="tl-dot" aria-hidden="true"></span>' +
+    '<div class="tl-meta"><span class="tl-tag">' + h(item.type === "edit" ? "Diedit" : "Ban") + '</span>' +
+    '<span class="tl-dev">' + h(name) + ' &middot; <code>' + h(item.code) + '</code></span>' +
+    '<span class="tl-time">' + h(fmtShort(item.at, now)) + '</span></div>' +
+    '<div class="tl-pre"><pre class="tl-msg">' + h(item.message) + '</pre>' +
+    '<button class="copy-btn tl-copy" type="button" data-copy-msg aria-label="Salin pesan" title="Salin pesan">' + ICON_COPY + '</button></div></div>';
+}
+
+async function renderGlobalHistoryNow() {
+  const box = qs("#m-ghist");
+  if (!box) { if (globalHistTimer) { clearInterval(globalHistTimer); globalHistTimer = null; } return; }
+  let items = [];
+  let failed = false;
+  try {
+    const data = await jf(BAN_HISTORY + ".json");
+    if (data && typeof data === "object") {
+      for (const code of Object.keys(data)) {
+        const entries = data[code];
+        if (!entries || typeof entries !== "object") continue;
+        for (const row of Object.values(entries)) {
+          if (row && typeof row.message === "string") items.push({ code, message: row.message, at: row.at, type: row.type });
+        }
+      }
+    }
+  } catch (e) { failed = true; }
+  const box2 = qs("#m-ghist");
+  if (!box2) return; // panel sudah ditutup selagi fetch berjalan
+  items.sort((a, b) => (Number(b.at) || 0) - (Number(a.at) || 0));
+  items = items.slice(0, 500); // jaga performa render kalau riwayatnya sudah sangat panjang
+  if (!items.length) {
+    box2.innerHTML = '<p class="hist-empty">' + (failed ? "Gagal memuat riwayat." : "Belum ada riwayat pesan ban.") + '</p>';
+    return;
+  }
+  const now = nowMs();
+  box2.innerHTML = '<div class="tl">' + items.map(x => ghistItemHtml(x, now)).join("") + '</div>';
+}
+
+function openGlobalHistory() {
+  openModal({
+    title: "Riwayat ban (semua perangkat)",
+    center: true,
+    cls: "ok",
+    okText: "Tutup",
+    noCancel: true,
+    body: '<div class="hist-list" id="m-ghist"><p class="hist-empty">Memuat...</p></div>',
+    onConfirm: async () => {}
+  });
+  renderGlobalHistoryNow();
+  globalHistTimer = setInterval(renderGlobalHistoryNow, REFRESH_MS);
 }
 
 // Salin teks pesan dari linimasa riwayat
@@ -968,6 +1028,7 @@ function showDash() {
     '<header class="topbar"><div class="topbar-in">' +
       '<div class="brand-text"><strong>List Device</strong><span class="conn" id="conn"></span></div>' +
       '<div class="top-actions">' +
+        '<button class="btn icon-btn sq" type="button" id="ghist" aria-label="Riwayat ban semua perangkat" title="Riwayat ban (semua perangkat)">' + ICON_HISTORY + '</button>' +
         '<button class="btn icon-btn sq" type="button" id="grid" aria-label="Mode grid" aria-pressed="' + gridMode + '" title="Mode grid">' + ICON_GRID + '</button>' +
         '<button class="btn icon-btn sq" type="button" id="theme" aria-label="Ganti tema" title="Ganti tema">' + ICON_SUN + ICON_MOON + '</button>' +
         '<button class="btn icon-btn sq logout" type="button" id="logout" aria-label="Logout" title="Logout">' + ICON_LOGOUT + '</button>' +
@@ -994,6 +1055,7 @@ function showDash() {
 
   filter = "all"; query = "";
 
+  qs("#ghist").addEventListener("click", openGlobalHistory);
   qs("#grid").addEventListener("click", function () {
     gridMode = !gridMode;
     store.set("ujian_admin_grid", gridMode ? "1" : "0");
