@@ -141,6 +141,8 @@ textarea.input[readonly] { resize: none; cursor: default; background: var(--surf
 .icon-btn { padding: 8px; }
 .icon-btn.sq { width: 44px; height: 44px; padding: 0; border: 0; border-radius: 14px; background: var(--surface); color: var(--text); }
 .icon-btn.sq svg { width: 20px; height: 20px; }
+.icon-btn { position: relative; }
+.badge-count { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--danger-text); color: #fff; font-size: 10px; font-weight: 700; line-height: 18px; text-align: center; box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
 .icon-btn .moon { display: none; }
 :root[data-theme="light"] .icon-btn .sun { display: none; }
 :root[data-theme="light"] .icon-btn .moon { display: block; }

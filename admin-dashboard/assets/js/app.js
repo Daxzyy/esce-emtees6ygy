@@ -292,10 +292,12 @@ async function refresh() {
   const my = session;
   inflight = true;
   try {
-    const [devs, bans, owners] = await Promise.all([jf(BASE + ".json"), jf(BANS + ".json"), jf(OWNERS + ".json").catch(() => ({})), loadGsmaIndex()]);
+    const [devs, bans, owners, , ghist] = await Promise.all([jf(BASE + ".json"), jf(BANS + ".json"), jf(OWNERS + ".json").catch(() => ({})), loadGsmaIndex(), jf(BAN_HISTORY + ".json").catch(() => ({}))]);
     if (my !== session) return;
     const ownerMap = owners && typeof owners === "object" ? owners : {};
     const banMap = bans && typeof bans === "object" ? bans : {};
+    ghistKnownTotal = countBanHistory(ghist);
+    updateGhistBadge();
     devices = Object.entries(devs || {}).map(([code, v]) => {
       const ban = banMap[code];
       const banMsg = ban && typeof ban === "object" && typeof ban.message === "string" ? ban.message : "";
@@ -829,6 +831,39 @@ function openBanMsg(code) {
 }
 
 let globalHistTimer = null; // interval panel riwayat global, jalan cuma selagi modalnya kebuka
+let ghistKnownTotal = 0;     // jumlah entri /ban_history terakhir yang diketahui (dari refresh() atau panel)
+const GHIST_SEEN_KEY = "ujian_admin_ghist_seen";
+
+// Hitung total entri di seluruh /ban_history (semua kode digabung)
+function countBanHistory(data) {
+  let n = 0;
+  if (data && typeof data === "object") {
+    for (const entries of Object.values(data)) {
+      if (entries && typeof entries === "object") n += Object.keys(entries).length;
+    }
+  }
+  return n;
+}
+
+// Badge merah di ikon riwayat global = jumlah entri baru sejak terakhir panelnya dibuka
+function updateGhistBadge() {
+  const el = qs("#ghist-count");
+  if (!el) return;
+  const seen = Number(store.get(GHIST_SEEN_KEY)) || 0;
+  const unseen = Math.max(0, ghistKnownTotal - seen);
+  if (unseen > 0) {
+    el.textContent = unseen > 99 ? "99+" : String(unseen);
+    el.hidden = false;
+  } else {
+    el.hidden = true;
+  }
+}
+
+// Ditandai sudah dilihat begitu panel riwayat global dibuka / sedang kebuka
+function markGhistSeen() {
+  store.set(GHIST_SEEN_KEY, String(ghistKnownTotal));
+  updateGhistBadge();
+}
 
 // Riwayat pesan ban custom: /ban_history/{kode}/{pushId} = { message, at, type }
 // Dicatat cuma kalau pesannya diisi; gagal nyatet tidak membatalkan ban-nya.
@@ -928,6 +963,8 @@ async function renderGlobalHistoryNow() {
         }
       }
     }
+    ghistKnownTotal = countBanHistory(data);
+    markGhistSeen(); // panel lagi kebuka: entri baru yang masuk selagi ini dianggap sudah terlihat juga
   } catch (e) { failed = true; }
   const box2 = qs("#m-ghist");
   if (!box2) return; // panel sudah ditutup selagi fetch berjalan
@@ -951,6 +988,7 @@ function openGlobalHistory() {
     body: '<div class="hist-list" id="m-ghist"><p class="hist-empty">Memuat...</p></div>',
     onConfirm: async () => {}
   });
+  markGhistSeen(); // dibuka = dianggap sudah dibaca, badge langsung hilang
   renderGlobalHistoryNow();
   globalHistTimer = setInterval(renderGlobalHistoryNow, REFRESH_MS);
 }
@@ -1028,7 +1066,7 @@ function showDash() {
     '<header class="topbar"><div class="topbar-in">' +
       '<div class="brand-text"><strong>List Device</strong><span class="conn" id="conn"></span></div>' +
       '<div class="top-actions">' +
-        '<button class="btn icon-btn sq" type="button" id="ghist" aria-label="Riwayat ban semua perangkat" title="Riwayat ban (semua perangkat)">' + ICON_HISTORY + '</button>' +
+        '<button class="btn icon-btn sq" type="button" id="ghist" aria-label="Riwayat ban semua perangkat" title="Riwayat ban (semua perangkat)">' + ICON_HISTORY + '<span class="badge-count" id="ghist-count" hidden>0</span></button>' +
         '<button class="btn icon-btn sq" type="button" id="grid" aria-label="Mode grid" aria-pressed="' + gridMode + '" title="Mode grid">' + ICON_GRID + '</button>' +
         '<button class="btn icon-btn sq" type="button" id="theme" aria-label="Ganti tema" title="Ganti tema">' + ICON_SUN + ICON_MOON + '</button>' +
         '<button class="btn icon-btn sq logout" type="button" id="logout" aria-label="Logout" title="Logout">' + ICON_LOGOUT + '</button>' +
