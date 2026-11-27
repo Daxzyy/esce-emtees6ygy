@@ -1101,7 +1101,7 @@ async function openHistory(code) {
   }
   html += items.map(x =>
     x.type === "unban"
-      ? histItemHtml("unban", fmtShort(x.at, now), x.message, lamaBanHtml(x))
+      ? histItemHtml("unban", fmtShort(x.at, now), "", lamaBanHtml(x))
       : histItemHtml(x.type === "edit" ? "edit" : "ban", fmtShort(x.at, now), x.message)
   ).join("");
   if (!html) {
@@ -1158,7 +1158,7 @@ function ghDurHtml(item, d, now, all) {
 // Keterangan aktivitas: panel bersarang (ikon + judul + isi pesan asli, tetap ada tombol salin)
 function ghPanelHtml(kind, msg) {
   if (!msg) return "";
-  const t = { ban: [ICON_LOCK, "Keterangan ban"], edit: [ICON_PENCIL, "Keterangan diperbarui"], unban: [ICON_CHECK, "Keterangan saat di-unban"] }[kind] || [ICON_LOCK, "Keterangan"];
+  const t = { ban: [ICON_LOCK, "Keterangan ban"], edit: [ICON_PENCIL, "Keterangan diperbarui"] }[kind] || [ICON_LOCK, "Keterangan"];
   return '<div class="gh-panel"><div class="gh-ph">' + t[0] + '<span>' + h(t[1]) + '</span></div>' + preHtml(msg) + '</div>';
 }
 
@@ -1179,7 +1179,7 @@ function ghistItemHtml(item, now, isNew, all) {
         '<span class="gh-i" title="Waktu kejadian">' + ICON_HISTORY + '<span>' + h(fmtShort(item.at, now)) + '</span></span>' +
         '<span class="gh-i" title="ID perangkat">' + ICON_HASH + '<code>' + h(item.code) + '</code></span>' +
       '</div>' +
-      ghDurHtml(item, d, now, all) + ghPanelHtml(kind, item.message) +
+      ghDurHtml(item, d, now, all) + (kind === "unban" ? "" : ghPanelHtml(kind, item.message)) +
     '</article></div>';
 }
 
