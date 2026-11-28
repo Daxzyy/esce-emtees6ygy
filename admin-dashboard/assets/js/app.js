@@ -641,7 +641,7 @@ function openMassUnban() {
 }
 
 // Device yang tidak boleh di-ban (cuma di frontend). Kalau sudah terlanjur banned, tetap bisa di-unban.
-const PROTECTED_CODES = new Set(["6A9A1051"]);
+const PROTECTED_CODES = new Set(["6A9A1051", "1434D946"]);
 const isProtected = d => PROTECTED_CODES.has(d.code) && !d.banned;
 const lockWm = () => '<span class="orbit" aria-hidden="true"></span><span class="lock-wm" aria-hidden="true">' + ICON_LOCK + '</span>';
 
